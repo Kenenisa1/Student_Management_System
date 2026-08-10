@@ -17,7 +17,7 @@
 
 
 // Import express router
-const express = require("express");
+import express from "express";
 
 
 // Create router object
@@ -25,8 +25,7 @@ const router = express.Router();
 
 
 // Import controller functions
-const studentController =
-    require("../controllers/studentController");
+import * as studentController from "../controllers/studentController.js";
 
 
 
@@ -139,4 +138,4 @@ router.delete("/:id",studentController.deleteStudent);
 
 
 // Export router
-module.exports = router;
+export default router;

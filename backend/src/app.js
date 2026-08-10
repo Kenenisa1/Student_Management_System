@@ -19,8 +19,7 @@
  */
 
 
-// Import Express framework
-const express = require("express");
+import express from "express";
 
 
 
@@ -87,8 +86,7 @@ app.use(
  */
 
 
-const logger =
-require("./middleware/loggerMiddleware");
+import logger from "./middleware/loggerMiddleware.js";
 
 
 // Every request passes through logger
@@ -128,8 +126,7 @@ app.use(logger);
  */
 
 
-const studentRoutes =
-require("./routes/studentRoutes");
+import studentRoutes from "./routes/studentRoutes.js";
 
 
 
@@ -201,8 +198,7 @@ app.get("/",(req,res)=>{
  */
 
 
-const notFound =
-require("./middleware/notFoundMiddleware");
+import notFound from "./middleware/notFoundMiddleware.js";
 
 
 app.use(notFound);
@@ -228,8 +224,7 @@ app.use(notFound);
  */
 
 
-const errorHandler =
-require("./middleware/errorMiddleware");
+import errorHandler from "./middleware/errorMiddleware.js";
 
 
 app.use(errorHandler);
@@ -251,4 +246,4 @@ app.use(errorHandler);
  */
 
 
-module.exports = app;
+export default app;

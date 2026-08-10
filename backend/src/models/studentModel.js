@@ -16,7 +16,7 @@
 
 
 // Import database connection pool
-const { pool } = require("../config/db");
+import { pool } from "../config/db.js";
 
 
 
@@ -196,16 +196,10 @@ const deleteStudent=async(id)=>{
 
 
 // Export functions
-module.exports={
-
+export {
     createStudent,
-
     getAllStudents,
-
     getStudentById,
-
     updateStudent,
-
     deleteStudent
-
 };
