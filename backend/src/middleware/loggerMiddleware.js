@@ -41,4 +41,4 @@ const logger = (req,res,next)=>{
 
 
 
-module.exports = logger;
+export default logger;

@@ -8,7 +8,7 @@
  */
 
 
-const studentModel = require("../models/studentModel");
+import * as studentModel from "../models/studentModel.js";
 
 
 
@@ -19,7 +19,7 @@ const studentModel = require("../models/studentModel");
  * POST /api/students
  */
 
-exports.createStudent = async(req,res)=>{
+export const createStudent = async(req,res)=>{
 
 
     try{
@@ -71,7 +71,7 @@ exports.createStudent = async(req,res)=>{
  * GET /api/students
  */
 
-exports.getAllStudents=async(req,res)=>{
+export const getAllStudents=async(req,res)=>{
 
 
     try{
@@ -116,7 +116,7 @@ exports.getAllStudents=async(req,res)=>{
  * GET /api/students/:id
  */
 
-exports.getStudentById=async(req,res)=>{
+export const getStudentById=async(req,res)=>{
 
 
     try{
@@ -167,7 +167,7 @@ exports.getStudentById=async(req,res)=>{
  * PUT /api/students/:id
  */
 
-exports.updateStudent=async(req,res)=>{
+export const updateStudent=async(req,res)=>{
 
 
     try{
@@ -214,7 +214,7 @@ exports.updateStudent=async(req,res)=>{
  * DELETE /api/students/:id
  */
 
-exports.deleteStudent=async(req,res)=>{
+export const deleteStudent=async(req,res)=>{
 
 
     try{

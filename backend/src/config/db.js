@@ -13,8 +13,7 @@
  */
 
 
-// Import mysql2 promise version
-const mysql = require("mysql2/promise");
+import mysql from "mysql2/promise";
 
 
 // Create MySQL connection pool
@@ -97,14 +96,4 @@ async function connectDB(){
 
 
 
-// Export both
-// 1. pool -> used for queries
-// 2. connectDB -> used when starting server
-
-module.exports = {
-
-    pool,
-
-    connectDB
-
-};
+export { pool, connectDB };

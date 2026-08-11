@@ -13,14 +13,14 @@
  * =====================================================
  */
 
-// Load variables from .env
-require("dotenv").config();
+import dotenv from "dotenv";
+dotenv.config();
 
 // Import configured Express app
-const app = require("./app");
+import app from "./app.js";
 
 // Import database connection function
-const { connectDB } = require("./config/db");
+import { connectDB } from "./config/db.js";
 
 // Read port from environment variables
 const PORT = process.env.PORT || 5000;
