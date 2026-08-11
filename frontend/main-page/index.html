@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="EduCore — Enterprise Student Management System. Manage students, departments, courses, and analytics in one place." />
+  <title>JU Student Management System</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%234f46e5'/%3E%3Cpath d='M16 8L6 13l10 5 10-5z' fill='white'/%3E%3Cpath d='M8 15v5c4 4 12 4 16 0v-5' fill='none' stroke='white' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="index.css" />
+  <link rel="stylesheet" href="auth.css" />
+  <!--
+    Flash-of-content prevention: body is invisible until js/index.js
+    confirms authentication and adds the `auth-ready` class to <html>.
+    The timeout fallback (300ms) ensures the page is never permanently
+    hidden if JS is slow to execute.
+  -->
+  <style>
+    html:not(.auth-ready) body { visibility: hidden; }
+  </style>
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════
+       NAVIGATION HEADER
+       ═══════════════════════════════════════════ -->
+  <header class="site-header" id="site-header">
+    <div class="container header-inner">
+
+      <!-- Logo -->
+      <a href="index.html" class="logo" aria-label="EduCore home">
+        <div class="logo-icon" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+            <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+          </svg>
+        </div>
+        <span class="logo-text">JU Student Management</span>
+      </a>
+
+      <!-- Desktop nav links -->
+      <nav class="nav-links" id="nav-links" role="navigation" aria-label="Main navigation">
+        <a href="index.html"       class="nav-link nav-link--active">🏠 Home</a>
+        <a href="../dashboard.html"   class="nav-link">📊 Dashboard</a>
+        <a href="../students.html"    class="nav-link">👨‍🎓 Students</a>
+        <a href="../departments.html" class="nav-link">🏫 Departments</a>
+        <a href="../courses.html"     class="nav-link">📚 Courses</a>
+        <a href="../reports.html"     class="nav-link">📈 Reports</a>
+      </nav>
+
+      <!-- CTA buttons -->
+
+      <!-- Mobile hamburger -->
+      <button id="landing-hamburger-btn" class="hamburger-btn" aria-label="Toggle navigation" aria-expanded="false">
+        ☰
+      </button>
+
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ═══════════════════════════════════════════
+         HERO SECTION
+         ═══════════════════════════════════════════ -->
+    <section class="hero" id="hero" aria-labelledby="hero-heading">
+      <div class="hero-bg-grid" aria-hidden="true"></div>
+      <div class="container hero-inner">
+
+        <div class="hero-content">
+          <div class="hero-badge" aria-label="New platform announcement">
+            <span class="hero-badge-dot" aria-hidden="true"></span>
+            Enterprise-grade &amp; open to everyone
+          </div>
+
+          <h1 id="hero-heading" class="hero-heading">
+            The modern platform for
+            <span class="hero-heading-gradient">student management</span>
+          </h1>
+
+          <p class="hero-subheading">
+            JU Student Management unifies students, departments, courses, and analytics under one
+            beautifully designed workspace — so administrators can focus on education,
+            not spreadsheets.
+          </p>
+
+          <div class="hero-actions">
+            <a href="../students.html" class="btn btn-primary btn-lg">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+                <polyline points="10 17 15 12 10 7"/>
+                <line x1="15" y1="12" x2="3" y2="12"/>
+              </svg>
+              Get Started / Students
+            </a>
+            <a href="../dashboard.html" class="btn btn-outline btn-lg">Explore Dashboard</a>
+          </div>
+
+          <div class="hero-social-proof">
+            <div class="avatar-stack" aria-hidden="true">
+              <div class="avatar-bubble" style="background:#6366f1">JS</div>
+              <div class="avatar-bubble" style="background:#8b5cf6">AM</div>
+              <div class="avatar-bubble" style="background:#0891b2">RK</div>
+              <div class="avatar-bubble" style="background:#059669">PL</div>
+            </div>
+            <p class="hero-proof-text">Trusted by <strong>2,400+</strong> institutions worldwide</p>
+          </div>
+        </div>
+
+        <!-- Hero graphic -->
+        <div class="hero-graphic" aria-hidden="true">
+          <div class="hero-card hero-card--main">
+            <div class="hc-header">
+              <div class="hc-dots">
+                <span style="background:#f87171"></span>
+                <span style="background:#fbbf24"></span>
+                <span style="background:#34d399"></span>
+              </div>
+              <span class="hc-title">Live Dashboard</span>
+            </div>
+            <div class="hc-stats-row">
+              <div class="hc-stat"><span class="hc-stat-val">2,418</span><span class="hc-stat-lbl">Students</span></div>
+              <div class="hc-stat"><span class="hc-stat-val">12</span><span class="hc-stat-lbl">Departments</span></div>
+              <div class="hc-stat"><span class="hc-stat-val">148</span><span class="hc-stat-lbl">Courses</span></div>
+            </div>
+            <div class="hc-bars">
+              <div class="hc-bar-row"><span>Computer Sci.</span><div class="hc-bar"><div style="width:82%;background:#4f46e5"></div></div><span>82%</span></div>
+              <div class="hc-bar-row"><span>Business</span><div class="hc-bar"><div style="width:67%;background:#7c3aed"></div></div><span>67%</span></div>
+              <div class="hc-bar-row"><span>Engineering</span><div class="hc-bar"><div style="width:74%;background:#0891b2"></div></div><span>74%</span></div>
+            </div>
+          </div>
+          <div class="hero-card hero-card--float hero-card--float1">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>Student enrolled</span>
+          </div>
+          <div class="hero-card hero-card--float hero-card--float2">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span>Report exported</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════
+         STATS TICKER
+         ═══════════════════════════════════════════ -->
+    <section class="stats-ticker" id="stats" aria-label="Platform statistics">
+      <div class="container stats-ticker-inner">
+        <div class="stat-item">
+          <span class="stat-num" data-target="2400">0</span>
+          <span class="stat-label">Students managed</span>
+        </div>
+        <div class="stat-divider" aria-hidden="true"></div>
+        <div class="stat-item">
+          <span class="stat-num" data-target="148">0</span>
+          <span class="stat-label">Active courses</span>
+        </div>
+        <div class="stat-divider" aria-hidden="true"></div>
+        <div class="stat-item">
+          <span class="stat-num" data-target="12">0</span>
+          <span class="stat-label">Departments</span>
+        </div>
+        <div class="stat-divider" aria-hidden="true"></div>
+        <div class="stat-item">
+          <span class="stat-num" data-target="99">0</span>
+          <span class="stat-suffix">%</span>
+          <span class="stat-label">Uptime SLA</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════
+         FEATURES GRID
+         ═══════════════════════════════════════════ -->
+    <section class="features" id="features" aria-labelledby="features-heading">
+      <div class="container">
+        <div class="section-header">
+          <p class="section-eyebrow">Everything you need</p>
+          <h2 id="features-heading" class="section-title">Built for modern institutions</h2>
+          <p class="section-body">
+            From student onboarding to analytics exports, EduCore covers every workflow
+            your administrative team touches — without the complexity.
+          </p>
+        </div>
+
+        <div class="features-grid">
+
+          <div class="feature-card" data-animate>
+            <div class="feature-icon" style="--ic:#4f46e5;--ib:#eef2ff">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <h3 class="feature-title">Student Directory</h3>
+            <p class="feature-body">Searchable, filterable records for every enrolled student with full contact, department, and course history.</p>
+            <a href="../students.html" class="feature-link">Manage students →</a>
+          </div>
+
+          <div class="feature-card" data-animate>
+            <div class="feature-icon" style="--ic:#7c3aed;--ib:#f5f3ff">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </div>
+            <h3 class="feature-title">Department Management</h3>
+            <p class="feature-body">Organise academic departments, assign faculty heads, track student allocations, and manage course catalogues.</p>
+            <a href="../departments.html" class="feature-link">View departments →</a>
+          </div>
+
+          <div class="feature-card" data-animate>
+            <div class="feature-icon" style="--ic:#0891b2;--ib:#ecfeff">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+            </div>
+            <h3 class="feature-title">Course Catalogue</h3>
+            <p class="feature-body">Browse and manage the complete course offering — codes, credits, instructors, and live enrollment counts.</p>
+            <a href="../courses.html" class="feature-link">Browse courses →</a>
+          </div>
+
+          <div class="feature-card" data-animate>
+            <div class="feature-icon" style="--ic:#059669;--ib:#ecfdf5">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            </div>
+            <h3 class="feature-title">Analytics &amp; Reports</h3>
+            <p class="feature-body">Live KPI dashboard with enrollment trends and one-click CSV exports for any dataset in the system.</p>
+            <a href="../reports.html" class="feature-link">Open reports →</a>
+          </div>
+
+          <div class="feature-card" data-animate>
+            <div class="feature-icon" style="--ic:#d97706;--ib:#fffbeb">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            </div>
+            <h3 class="feature-title">Role-Based Access</h3>
+            <p class="feature-body">Secure login with role-aware permissions — administrators, department heads, and read-only reviewers.</p>
+            <a href="../login.html" class="feature-link">Sign in →</a>
+          </div>
+
+          <div class="feature-card" data-animate>
+            <div class="feature-icon" style="--ic:#dc2626;--ib:#fef2f2">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+            </div>
+            <h3 class="feature-title">Real-Time Sync</h3>
+            <p class="feature-body">All data updates reflect instantly across views — no page refreshes needed when enrollments or records change.</p>
+            <a href="../dashboard.html" class="feature-link">See it live →</a>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════
+         ABOUT / HOW IT WORKS
+         ═══════════════════════════════════════════ -->
+    <section class="about" id="about" aria-labelledby="about-heading">
+      <div class="container about-inner">
+        <div class="about-text">
+          <p class="section-eyebrow">How it works</p>
+          <h2 id="about-heading" class="section-title">Simple setup, powerful results</h2>
+          <p class="section-body">
+            EduCore is built on a clean three-layer model: data, logic, and presentation
+            kept deliberately separate so your team can extend any piece without touching
+            the rest.
+          </p>
+          <ul class="about-steps">
+            <li class="about-step">
+              <div class="step-num" aria-hidden="true">01</div>
+              <div><strong>Import your data</strong><br>Upload existing student and department records via CSV or create them manually through the admin UI.</div>
+            </li>
+            <li class="about-step">
+              <div class="step-num" aria-hidden="true">02</div>
+              <div><strong>Organise &amp; enrol</strong><br>Assign students to departments, enrol them in courses, and track progress — all from one screen.</div>
+            </li>
+            <li class="about-step">
+              <div class="step-num" aria-hidden="true">03</div>
+              <div><strong>Analyse &amp; export</strong><br>Generate real-time analytics and export polished reports in one click for board presentations.</div>
+            </li>
+          </ul>
+          <a href="../dashboard.html" class="btn btn-primary btn-lg" style="margin-top:2rem;display:inline-flex">
+            Start exploring →
+          </a>
+        </div>
+        <div class="about-graphic" aria-hidden="true">
+          <div class="ag-card ag-card--1">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            <div><strong>2,418</strong><br><small>Active students</small></div>
+          </div>
+          <div class="ag-card ag-card--2">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <div><strong>148</strong><br><small>Courses running</small></div>
+          </div>
+          <div class="ag-card ag-card--3">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            <div><strong>99.8%</strong><br><small>System uptime</small></div>
+          </div>
+          <div class="ag-orb ag-orb--1" aria-hidden="true"></div>
+          <div class="ag-orb ag-orb--2" aria-hidden="true"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════
+         CTA BANNER
+         ═══════════════════════════════════════════ -->
+    <section class="cta-banner" aria-labelledby="cta-heading">
+      <div class="container cta-inner">
+        <div class="cta-orb cta-orb--1" aria-hidden="true"></div>
+        <div class="cta-orb cta-orb--2" aria-hidden="true"></div>
+        <h2 id="cta-heading" class="cta-title">Ready to modernise your institution?</h2>
+        <p class="cta-body">Jump straight into the dashboard — no configuration required.</p>
+        <div class="cta-actions">
+          <a href="../dashboard.html" class="btn btn-white btn-lg">Open Dashboard</a>
+          <a href="../login.html"     class="btn btn-outline-white btn-lg">Sign In</a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ═══════════════════════════════════════════
+       FOOTER
+       ═══════════════════════════════════════════ -->
+  <footer class="site-footer" role="contentinfo">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <a href="index.html" class="logo" aria-label="EduCore home">
+          <div class="logo-icon" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+          </div>
+          <span class="logo-text">EduCore</span>
+        </a>
+        <p class="footer-tagline">Enterprise student management, simplified.</p>
+      </div>
+      <nav class="footer-nav" aria-label="Footer navigation">
+        <div class="footer-col">
+          <h4 class="footer-col-title">Application</h4>
+          <a href="dashboard.html">Dashboard</a>
+          <a href="students.html">Students Directory</a>
+          <a href="departments.html">Departments</a>
+          <a href="courses.html">Courses</a>
+          <a href="reports.html">Reports</a>
+        </div>
+        <div class="footer-col">
+          <h4 class="footer-col-title">Account</h4>
+          <a href="login.html">Log In</a>
+          <a href="login.html">Register</a>
+        </div>
+        <div class="footer-col">
+          <h4 class="footer-col-title">Company</h4>
+          <a href="#about">About</a>
+          <a href="#features">Features</a>
+        </div>
+      </nav>
+    </div>
+    <div class="footer-bottom">
+      <div class="container">
+        <p>&copy; <span id="footer-year"></span> EduCore. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="auth.js"></script>
+  <script src="index.js"></script>
+</body>
+</html>
