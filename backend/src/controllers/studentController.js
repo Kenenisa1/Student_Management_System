@@ -33,7 +33,6 @@ export const createStudent = async(req,res)=>{
             await studentModel.createStudent(student);
 
 
-
         res.status(201).json({
 
             success:true,
@@ -173,13 +172,16 @@ export const updateStudent=async(req,res)=>{
     try{
 
 
-        await studentModel.updateStudent(
-
+        const result = await studentModel.updateStudent(
             req.params.id,
-
             req.body
-
         );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({
+                message: "Student not found"
+            });
+        }
 
 
 
@@ -220,11 +222,15 @@ export const deleteStudent=async(req,res)=>{
     try{
 
 
-        await studentModel.deleteStudent(
-
+        const result = await studentModel.deleteStudent(
             req.params.id
-
         );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({
+                message: "Student not found"
+            });
+        }
 
 
 
