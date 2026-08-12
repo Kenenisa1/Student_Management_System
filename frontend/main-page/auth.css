@@ -1,0 +1,147 @@
+/* ============================================================
+   css/auth.css — EduCore Shared Auth & Navigation Styles
+   Loaded by all app pages (dashboard, students, departments,
+   courses, reports) and index.html.
+   ============================================================ */
+
+/* ── Topbar user chip ──────────────────────────────────────── */
+.topbar-user {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--bg, #f8fafc);
+  border: 1px solid var(--border, #e2e8f0);
+  cursor: default;
+  transition: background .15s;
+}
+.topbar-user:hover { background: #f1f5f9; }
+
+.topbar-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  color: #fff;
+  font-size: .6875rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.topbar-user-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.2;
+}
+.topbar-user-name {
+  font-size: .8125rem;
+  font-weight: 600;
+  color: var(--text, #0f172a);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
+}
+.topbar-user-role {
+  font-size: .6875rem;
+  color: var(--text-m, #94a3b8);
+}
+
+/* ── Topbar logout button ──────────────────────────────────── */
+.btn-logout {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border: 1.5px solid var(--border, #e2e8f0);
+  border-radius: 8px;
+  background: var(--surface, #fff);
+  font-size: .8125rem;
+  font-weight: 600;
+  color: var(--text-2, #475569);
+  cursor: pointer;
+  transition: color .15s, border-color .15s, background .15s;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.btn-logout:hover {
+  color: #dc2626;
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+.btn-logout svg { flex-shrink: 0; }
+
+/* ── Back-to-dashboard breadcrumb bar ──────────────────────── */
+.back-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 0 18px;
+  margin-bottom: 4px;
+  border-bottom: 1px solid var(--border, #e2e8f0);
+  margin-bottom: 20px;
+}
+
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border, #e2e8f0);
+  background: var(--surface, #fff);
+  font-size: .8125rem;
+  font-weight: 600;
+  color: var(--text-2, #475569);
+  cursor: pointer;
+  text-decoration: none;
+  transition: color .15s, border-color .15s, background .15s;
+  white-space: nowrap;
+}
+.back-btn:hover {
+  color: var(--primary, #4f46e5);
+  border-color: var(--primary, #4f46e5);
+  background: #eef2ff;
+}
+.back-btn svg { flex-shrink: 0; }
+
+.back-bar-sep {
+  color: var(--border, #e2e8f0);
+  font-size: .875rem;
+  user-select: none;
+}
+.back-bar-current {
+  font-size: .8125rem;
+  font-weight: 600;
+  color: var(--text, #0f172a);
+}
+
+/* ── Sidebar logout button override (ensure JS-wired clicks) ── */
+/* The sidebar uses <a class="logout-btn"> — prevent default nav */
+.sidebar .logout-btn {
+  cursor: pointer;
+}
+
+/* ── Topbar right spacing ──────────────────────────────────── */
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* ── Responsive: hide user-name text on small screens ─────── */
+@media (max-width: 600px) {
+  .topbar-user-name,
+  .topbar-user-role { display: none; }
+  .topbar-user      { padding: 4px; }
+  .btn-logout span  { display: none; }
+  .btn-logout       { padding: 7px 9px; }
+  .back-bar-current { display: none; }
+}

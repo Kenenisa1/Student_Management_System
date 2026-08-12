@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Features Test — JU Student Management</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/index.css"/>
+  <link rel="stylesheet" href="css/animations.css"/>
+  <script src="js/theme-toggle.js"></script>
+  <style>
+    body { padding-top: 100px; }
+    .test-section { 
+      max-width: 1200px; 
+      margin: 0 auto; 
+      padding: 40px 20px; 
+      border-bottom: 2px solid var(--border);
+    }
+    .test-grid { 
+      display: grid; 
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
+      gap: 20px; 
+      margin-top: 20px; 
+    }
+    .test-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      box-shadow: var(--shadow-sm);
+    }
+    h2 { margin-bottom: 10px; color: var(--text-primary); }
+    p { color: var(--text-secondary); margin-bottom: 20px; }
+  </style>
+</head>
+<body>
+
+  <!-- Test Header -->
+  <header class="site-header" id="site-header">
+    <div class="container header-inner">
+      <a href="#" class="logo">
+        <div class="logo-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>
+          </svg>
+        </div>
+        <span class="logo-text">Feature Test</span>
+      </a>
+      <nav class="nav-links" id="nav-links">
+        <a href="#buttons" class="nav-link nav-link--active">Buttons</a>
+        <a href="#loading" class="nav-link">Loading</a>
+        <a href="#animations" class="nav-link">Animations</a>
+        <a href="#responsive" class="nav-link">Responsive</a>
+      </nav>
+      <div class="header-actions" id="header-actions">
+        <button id="theme-toggle" class="theme-toggle" title="Toggle theme" aria-label="Switch theme" type="button">
+          <span class="theme-toggle-slider">
+            <span class="theme-toggle-icon theme-toggle-icon-sun">☀️</span>
+            <span class="theme-toggle-icon theme-toggle-icon-moon">🌙</span>
+          </span>
+        </button>
+        <button class="btn btn-ghost">Sign In</button>
+        <button class="btn btn-primary">Sign Up</button>
+      </div>
+      <button id="hamburger" class="hamburger-btn" aria-label="Menu">☰</button>
+    </div>
+  </header>
+
+  <!-- Section 1: Buttons -->
+  <section class="test-section" id="buttons">
+    <h2>✨ Enhanced Buttons</h2>
+    <p>Hover, focus, and click to test states</p>
+    <div class="test-grid">
+      <div class="test-card">
+        <h3 style="margin-bottom: 12px; font-size: 1rem;">Primary Button</h3>
+        <button class="btn btn-primary">Click Me</button>
+      </div>
+      <div class="test-card">
+        <h3 style="margin-bottom: 12px; font-size: 1rem;">Ghost Button</h3>
+        <button class="btn btn-ghost">Click Me</button>
+      </div>
+      <div class="test-card">
+        <h3 style="margin-bottom: 12px; font-size: 1rem;">Outline Button</h3>
+        <button class="btn btn-outline">Click Me</button>
+      </div>
+      <div class="test-card">
+        <h3 style="margin-bottom: 12px; font-size: 1rem;">Disabled Button</h3>
+        <button class="btn btn-primary" disabled>Disabled</button>
+      </div>
+      <div class="test-card">
+        <h3 style="margin-bottom: 12px; font-size: 1rem;">Loading Button</h3>
+        <button class="btn btn-primary loading">Loading...</button>
+      </div>
+      <div class="test-card">
+        <h3 style="margin-bottom: 12px; font-size: 1rem;">Large Button</h3>
+        <button class="btn btn-primary btn-lg">Large Size</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 2: Loading States -->
+  <section class="test-section" id="loading">
+    <h2>⏳ Loading States</h2>
+    <p>Skeleton loaders and spinners</p>
+    <div class="test-grid">
+      <div class="test-card">
+        <h3 style="margin-bottom: 12px; font-size: 1rem;">Spinner</h3>
+        <div class="spinner"></div>
+      </div>
+      <div class="test-card">
+        <h3 style="margin-bottom: 12px; font-size: 1rem;">Large Spinner</h3>
+        <div class="spinner spinner-lg"></div>
+      </div>
+      <div class="test-card">
+        <h3 style="margin-bottom: 12px; font-size: 1rem;">Pulse Dot</h3>
+        <span class="pulse-dot"></span>
+      </div>
+      <div class="test-card">
+        <h3 style="margin-bottom: 12px; font-size: 1rem;">Skeleton Text</h3>
+        <div class="skeleton skeleton-text" style="width: 100%;"></div>
+        <div class="skeleton skeleton-text" style="width: 80%;"></div>
+        <div class="skeleton skeleton-text" style="width: 60%;"></div>
+      </div>
+      <div class="test-card">
+        <h3 style="margin-bottom: 12px; font-size: 1rem;">Skeleton Avatar</h3>
+        <div class="skeleton skeleton-avatar"></div>
+      </div>
+      <div class="test-card">
+        <h3 style="margin-bottom: 12px; font-size: 1rem;">Skeleton Button</h3>
+        <div class="skeleton skeleton-button"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 3: Animations -->
+  <section class="test-section" id="animations">
+    <h2>💫 Animations</h2>
+    <p>Scroll down to see staggered animations</p>
+    <div class="test-grid">
+      <div class="test-card animate-fade-in-up stagger-1">
+        <h3 style="margin-bottom: 12px; font-size: 1rem;">Fade In Up #1</h3>
+        <p style="margin: 0;">Stagger delay: 0.05s</p>
+      </div>
+      <div class="test-card animate-fade-in-up stagger-2">
+        <h3 style="margin-bottom: 12px; font-size: 1rem;">Fade In Up #2</h3>
+        <p style="margin: 0;">Stagger delay: 0.1s</p>
+      </div>
+      <div class="test-card animate-fade-in-up stagger-3">
+        <h3 style="margin-bottom: 12px; font-size: 1rem;">Fade In Up #3</h3>
+        <p style="margin: 0;">Stagger delay: 0.15s</p>
+      </div>
+      <div class="test-card hover-lift">
+        <h3 style="margin-bottom: 12px; font-size: 1rem;">Hover Lift</h3>
+        <p style="margin: 0;">Hover over me!</p>
+      </div>
+      <div class="test-card hover-scale">
+        <h3 style="margin-bottom: 12px; font-size: 1rem;">Hover Scale</h3>
+        <p style="margin: 0;">Hover over me!</p>
+      </div>
+      <div class="test-card">
+        <h3 style="margin-bottom: 12px; font-size: 1rem;">Status Indicator</h3>
+        <span class="status-indicator success pulsing"></span>
+        <span style="margin-left: 8px;">Online</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 4: Responsive -->
+  <section class="test-section" id="responsive">
+    <h2>📱 Responsive Design</h2>
+    <p>Resize your browser or view on mobile to test</p>
+    <div class="test-card">
+      <h3 style="margin-bottom: 12px; font-size: 1rem;">Current Breakpoint</h3>
+      <p id="breakpoint" style="font-weight: 700; font-size: 1.5rem; color: var(--primary);"></p>
+    </div>
+  </section>
+
+  <!-- Section 5: Dark Mode -->
+  <section class="test-section">
+    <h2>🌙 Dark Mode</h2>
+    <p>Change your system preferences to see dark mode in action</p>
+    <div class="test-card">
+      <h3 style="margin-bottom: 12px; font-size: 1rem;">Theme Detection</h3>
+      <p id="theme" style="font-weight: 700; font-size: 1.25rem; color: var(--primary);"></p>
+      <p style="margin: 0; font-size: 0.875rem;">
+        Current theme is detected from your system settings
+      </p>
+    </div>
+  </section>
+
+  <script>
+    // Hamburger menu toggle
+    const hamburger = document.getElementById('hamburger');
+    const navLinks = document.getElementById('nav-links');
+    hamburger.addEventListener('click', () => {
+      navLinks.classList.toggle('active');
+      hamburger.setAttribute('aria-expanded', navLinks.classList.contains('active'));
+    });
+
+    // Header scroll shadow
+    const header = document.getElementById('site-header');
+    window.addEventListener('scroll', () => {
+      header.classList.toggle('scrolled', window.scrollY > 10);
+    });
+
+    // Breakpoint detector
+    function updateBreakpoint() {
+      const width = window.innerWidth;
+      let bp = 'Desktop (1280px+)';
+      if (width < 640) bp = 'Mobile (< 640px)';
+      else if (width < 768) bp = 'Large Mobile (640-768px)';
+      else if (width < 1024) bp = 'Tablet (768-1024px)';
+      else if (width < 1280) bp = 'Laptop (1024-1280px)';
+      document.getElementById('breakpoint').textContent = bp + ' — ' + width + 'px';
+    }
+    updateBreakpoint();
+    window.addEventListener('resize', updateBreakpoint);
+
+    // Dark mode detector
+    function updateTheme() {
+      const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      document.getElementById('theme').textContent = isDark ? '🌙 Dark Mode Active' : '☀️ Light Mode Active';
+    }
+    updateTheme();
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', updateTheme);
+  </script>
+
+</body>
+</html>

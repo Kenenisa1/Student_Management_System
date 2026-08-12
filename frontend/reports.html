@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Reports — JU Student Management</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%234f46e5'/%3E%3Cpath d='M16 8L6 13l10 5 10-5z' fill='white'/%3E%3C/svg%3E"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/index.css"/>
+  <link rel="stylesheet" href="css/reports.css"/>
+  <link rel="stylesheet" href="css/animations.css"/>
+  <link rel="stylesheet" href="css/auth.css"/>
+  <style>html:not(.auth-ready) body { visibility: hidden; }</style>
+  <script src="js/theme-toggle.js"></script>
+</head>
+<body>
+
+  <!-- SITE-WIDE NAVIGATION HEADER -->
+  <header class="site-header" id="site-header">
+    <div class="container header-inner">
+      <a href="main-page/index.html" class="logo" aria-label="Home">
+        <div class="logo-icon" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>
+          </svg>
+        </div>
+        <span class="logo-text">JU Student Management</span>
+      </a>
+      <nav class="nav-links" id="nav-links" role="navigation" aria-label="Main navigation">
+        <a href="main-page/index.html"       class="nav-link">🏠 Home</a>
+        <a href="dashboard.html"   class="nav-link">📊 Dashboard</a>
+        <a href="students.html"    class="nav-link">👨‍🎓 Students</a>
+        <a href="departments.html" class="nav-link">🏫 Departments</a>
+        <a href="courses.html"     class="nav-link">📚 Courses</a>
+        <a href="reports.html"     class="nav-link nav-link--active">📈 Reports</a>
+      </nav>
+      <div class="header-actions" id="header-actions">
+        <button id="theme-toggle" class="theme-toggle" title="Toggle theme" aria-label="Switch theme" type="button">
+          <span class="theme-toggle-slider">
+            <span class="theme-toggle-icon theme-toggle-icon-sun">☀️</span>
+            <span class="theme-toggle-icon theme-toggle-icon-moon">🌙</span>
+          </span>
+        </button>
+      </div>
+      <button id="landing-hamburger-btn" class="hamburger-btn" aria-label="Toggle navigation" aria-expanded="false">☰</button>
+    </div>
+  </header>
+
+  <!-- PAGE CONTENT -->
+  <main class="app-page-content">
+
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Analytics &amp; Reports</h1>
+        <p class="page-sub">Live KPIs, enrollment trends, and one-click data exports.</p>
+      </div>
+      <button class="btn-primary" id="export-all-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export All CSV
+      </button>
+    </div>
+
+    <!-- KPI CARDS -->
+    <div class="kpi-grid" id="kpi-grid"></div>
+
+    <!-- CHARTS ROW -->
+    <div class="charts-row">
+
+      <section class="report-card report-card--chart">
+        <div class="card-header">
+          <h2 class="card-title">Enrollment by Department</h2>
+          <button class="export-btn" id="export-dept-btn" title="Export department report">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export CSV
+          </button>
+        </div>
+        <div class="bar-chart" id="dept-chart"></div>
+      </section>
+
+      <section class="report-card report-card--list">
+        <div class="card-header">
+          <h2 class="card-title">Top Courses by Enrollment</h2>
+          <button class="export-btn" id="export-courses-btn" title="Export courses report">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export CSV
+          </button>
+        </div>
+        <div class="course-rank-list" id="course-rank-list"></div>
+      </section>
+
+    </div>
+
+    <!-- EXPORT WORKSPACE -->
+    <section class="report-card export-workspace">
+      <div class="card-header">
+        <h2 class="card-title">Export Workspace</h2>
+        <span class="card-subtitle">Generate and download structured CSV files for any dataset</span>
+      </div>
+      <div class="export-grid">
+
+        <div class="export-item">
+          <div class="export-icon" style="--ic:#4f46e5;--ib:#eef2ff">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <div class="export-info"><h3>Student Records</h3><p>ID, name, email, department, courses, enrollment date</p></div>
+          <div class="export-meta"><span class="export-rows" id="student-rows-count">— rows</span></div>
+          <button class="btn-export" data-type="students">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download
+          </button>
+        </div>
+
+        <div class="export-item">
+          <div class="export-icon" style="--ic:#7c3aed;--ib:#f5f3ff">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          </div>
+          <div class="export-info"><h3>Department Summary</h3><p>Department name, head, student count, course count</p></div>
+          <div class="export-meta"><span class="export-rows" id="dept-rows-count">— rows</span></div>
+          <button class="btn-export" data-type="departments">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download
+          </button>
+        </div>
+
+        <div class="export-item">
+          <div class="export-icon" style="--ic:#0891b2;--ib:#ecfeff">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          </div>
+          <div class="export-info"><h3>Course Catalogue</h3><p>Course code, name, department, instructor, credits, enrolled</p></div>
+          <div class="export-meta"><span class="export-rows" id="course-rows-count">— rows</span></div>
+          <button class="btn-export" data-type="courses">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download
+          </button>
+        </div>
+
+        <div class="export-item">
+          <div class="export-icon" style="--ic:#059669;--ib:#ecfdf5">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          </div>
+          <div class="export-info"><h3>Enrollment Analytics</h3><p>Department, student count, growth %, course load average</p></div>
+          <div class="export-meta"><span class="export-rows">12 rows</span></div>
+          <button class="btn-export" data-type="analytics">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- EXPORT LOG -->
+    <section class="report-card">
+      <div class="card-header">
+        <h2 class="card-title">Export Log</h2>
+        <button class="clear-log-btn" id="clear-log-btn">Clear log</button>
+      </div>
+      <div class="export-log" id="export-log">
+        <p class="log-empty">No exports yet. Use the workspace above to generate your first report.</p>
+      </div>
+    </section>
+
+  </main>
+
+  <div class="toast" id="toast" aria-live="polite" aria-atomic="true"></div>
+
+  <script src="js/auth.js"></script>
+  <script src="js/reports.js"></script>
+</body>
+</html>

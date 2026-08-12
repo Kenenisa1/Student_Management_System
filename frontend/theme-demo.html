@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Theme Toggle Demo — JU Student Management</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/index.css"/>
+  <link rel="stylesheet" href="css/animations.css"/>
+  <script src="js/theme-toggle.js"></script>
+  <style>
+    body { padding-top: var(--header-h); }
+    .demo-container {
+      max-width: 1200px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+    .demo-hero {
+      text-align: center;
+      padding: 60px 20px;
+      background: var(--surface);
+      border-radius: var(--radius-xl);
+      border: 1px solid var(--border);
+      margin-bottom: 40px;
+      box-shadow: var(--shadow-lg);
+    }
+    .demo-hero h1 {
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 900;
+      background: linear-gradient(135deg, var(--primary), var(--violet));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 20px;
+    }
+    .demo-hero p {
+      font-size: 1.125rem;
+      color: var(--text-secondary);
+      max-width: 600px;
+      margin: 0 auto 32px;
+      line-height: 1.7;
+    }
+    .current-theme {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 24px;
+      background: var(--bg);
+      border: 2px solid var(--primary);
+      border-radius: var(--radius-full);
+      font-weight: 700;
+      font-size: 1.25rem;
+      color: var(--primary);
+    }
+    .demo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      margin-bottom: 40px;
+    }
+    .demo-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.3s ease;
+    }
+    .demo-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-md);
+    }
+    .demo-card-icon {
+      font-size: 2.5rem;
+      margin-bottom: 16px;
+    }
+    .demo-card h3 {
+      font-size: 1.125rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+    }
+    .demo-card p {
+      font-size: 0.9375rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      margin: 0;
+    }
+    .color-palette {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      margin-bottom: 40px;
+    }
+    .color-palette h2 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      margin-bottom: 24px;
+    }
+    .color-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 16px;
+    }
+    .color-swatch {
+      text-align: center;
+    }
+    .color-box {
+      width: 100%;
+      height: 80px;
+      border-radius: var(--radius-md);
+      border: 2px solid var(--border);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.75rem;
+    }
+    .color-label {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+    .instructions {
+      background: linear-gradient(135deg, var(--primary-light), #f0f9ff);
+      border: 2px solid var(--primary);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      margin-bottom: 40px;
+    }
+    [data-theme="dark"] .instructions {
+      background: linear-gradient(135deg, var(--primary-light), #1e293b);
+    }
+    .instructions h2 {
+      color: var(--primary);
+      margin-bottom: 16px;
+      font-size: 1.5rem;
+    }
+    .instructions ol {
+      margin-left: 20px;
+      color: var(--text-secondary);
+      line-height: 2;
+    }
+    .instructions li {
+      margin-bottom: 8px;
+    }
+    code {
+      background: var(--bg);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.875rem;
+      color: var(--primary);
+      border: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER WITH THEME TOGGLE -->
+  <header class="site-header" id="site-header">
+    <div class="container header-inner">
+      <a href="dashboard.html" class="logo" aria-label="Home">
+        <div class="logo-icon" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>
+          </svg>
+        </div>
+        <span class="logo-text">Theme Demo</span>
+      </a>
+      <nav class="nav-links" id="nav-links" role="navigation" aria-label="Main navigation">
+        <a href="#features" class="nav-link nav-link--active">🎨 Features</a>
+        <a href="#colors" class="nav-link">🌈 Colors</a>
+        <a href="#examples" class="nav-link">📝 Examples</a>
+        <a href="dashboard.html" class="nav-link">📊 Dashboard</a>
+      </nav>
+      <div class="header-actions" id="header-actions">
+        <button id="theme-toggle" class="theme-toggle" title="Toggle theme" aria-label="Switch theme" type="button">
+          <span class="theme-toggle-slider">
+            <span class="theme-toggle-icon theme-toggle-icon-sun">☀️</span>
+            <span class="theme-toggle-icon theme-toggle-icon-moon">🌙</span>
+          </span>
+        </button>
+      </div>
+      <button id="landing-hamburger-btn" class="hamburger-btn" aria-label="Toggle navigation" aria-expanded="false">☰</button>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT -->
+  <div class="demo-container">
+
+    <!-- Hero Section -->
+    <div class="demo-hero animate-fade-in-up">
+      <h1>🌓 Light & Dark Mode</h1>
+      <p>
+        A beautiful theme switcher that lets you toggle between light and dark modes.
+        Your preference is saved automatically and persists across page visits.
+      </p>
+      <div class="current-theme">
+        <span id="theme-icon">☀️</span>
+        <span id="theme-name">Light Mode</span>
+      </div>
+    </div>
+
+    <!-- Instructions -->
+    <div class="instructions">
+      <h2>🎯 How to Use</h2>
+      <ol>
+        <li>Look for the <strong>theme toggle button</strong> (☀️/🌙) in the header (top-right)</li>
+        <li><strong>Click the toggle</strong> to switch between light and dark modes</li>
+        <li>Watch the <strong>smooth transition</strong> as colors change instantly</li>
+        <li>Your preference is <strong>saved automatically</strong> in browser storage</li>
+        <li>Navigate to any page — the theme <strong>persists</strong>!</li>
+      </ol>
+    </div>
+
+    <!-- Features Grid -->
+    <div class="demo-grid" id="features">
+      <div class="demo-card animate-fade-in-up stagger-1">
+        <div class="demo-card-icon">💾</div>
+        <h3>Persistent Storage</h3>
+        <p>Your theme choice is saved to localStorage and remembers your preference across sessions.</p>
+      </div>
+      <div class="demo-card animate-fade-in-up stagger-2">
+        <div class="demo-card-icon">⚡</div>
+        <h3>Instant Apply</h3>
+        <p>Theme loads before page renders — no flash of wrong theme. Smooth 300ms transition.</p>
+      </div>
+      <div class="demo-card animate-fade-in-up stagger-3">
+        <div class="demo-card-icon">📱</div>
+        <h3>Fully Responsive</h3>
+        <p>Works perfectly on desktop, tablet, and mobile. Touch-friendly with 32px height.</p>
+      </div>
+      <div class="demo-card animate-fade-in-up stagger-4">
+        <div class="demo-card-icon">♿</div>
+        <h3>Accessible</h3>
+        <p>Full keyboard support (Enter/Space), ARIA labels, and clear focus indicators.</p>
+      </div>
+      <div class="demo-card animate-fade-in-up stagger-5">
+        <div class="demo-card-icon">🎨</div>
+        <h3>Beautiful Design</h3>
+        <p>Animated slider with sun/moon icons. Gradient background in dark mode.</p>
+      </div>
+      <div class="demo-card animate-fade-in-up">
+        <div class="demo-card-icon">🌍</div>
+        <h3>Global</h3>
+        <p>Applied across all pages automatically. Set once, works everywhere.</p>
+      </div>
+    </div>
+
+    <!-- Color Palette -->
+    <div class="color-palette" id="colors">
+      <h2>🌈 Color Palette</h2>
+      <p style="color: var(--text-secondary); margin-bottom: 24px;">
+        Colors automatically adapt when switching themes. All values use CSS custom properties.
+      </p>
+      <div class="color-grid">
+        <div class="color-swatch">
+          <div class="color-box" style="background: var(--bg); color: var(--text-primary);">BG</div>
+          <div class="color-label">Background</div>
+        </div>
+        <div class="color-swatch">
+          <div class="color-box" style="background: var(--surface); color: var(--text-primary); border: 2px solid var(--border);">Surface</div>
+          <div class="color-label">Surface</div>
+        </div>
+        <div class="color-swatch">
+          <div class="color-box" style="background: var(--primary); color: white;">Primary</div>
+          <div class="color-label">Primary</div>
+        </div>
+        <div class="color-swatch">
+          <div class="color-box" style="background: var(--border); color: var(--text-primary);">Border</div>
+          <div class="color-label">Border</div>
+        </div>
+        <div class="color-swatch">
+          <div class="color-box" style="background: var(--surface); color: var(--text-primary); border: 2px solid var(--border);">
+            <span style="font-size: 1rem;">Text</span>
+          </div>
+          <div class="color-label">Text Primary</div>
+        </div>
+        <div class="color-swatch">
+          <div class="color-box" style="background: var(--surface); color: var(--text-secondary); border: 2px solid var(--border);">
+            <span style="font-size: 1rem;">Text</span>
+          </div>
+          <div class="color-label">Text Secondary</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Examples -->
+    <div class="demo-grid" id="examples">
+      <div class="demo-card">
+        <h3>Buttons</h3>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px;">
+          <button class="btn btn-primary">Primary</button>
+          <button class="btn btn-ghost">Ghost</button>
+          <button class="btn btn-outline">Outline</button>
+        </div>
+      </div>
+      <div class="demo-card">
+        <h3>Loading States</h3>
+        <div style="display: flex; gap: 16px; align-items: center; margin-top: 12px;">
+          <div class="spinner"></div>
+          <span class="pulse-dot"></span>
+          <button class="btn btn-primary loading">Loading...</button>
+        </div>
+      </div>
+      <div class="demo-card">
+        <h3>Forms</h3>
+        <input type="text" placeholder="Type something..." style="width: 100%; padding: 10px; border: 1.5px solid var(--border); border-radius: var(--radius-md); background: var(--bg); color: var(--text-primary); font-family: inherit; margin-top: 12px;">
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // Update theme display
+    function updateThemeDisplay() {
+      const theme = document.documentElement.getAttribute('data-theme') || 'light';
+      document.getElementById('theme-icon').textContent = theme === 'dark' ? '🌙' : '☀️';
+      document.getElementById('theme-name').textContent = theme === 'dark' ? 'Dark Mode' : 'Light Mode';
+    }
+
+    // Listen for theme changes
+    const observer = new MutationObserver(updateThemeDisplay);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+    
+    // Initial update
+    updateThemeDisplay();
+
+    // Hamburger menu (basic functionality)
+    const hamburger = document.getElementById('landing-hamburger-btn');
+    const navLinks = document.getElementById('nav-links');
+    const header = document.getElementById('site-header');
+
+    if (hamburger && navLinks) {
+      hamburger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        navLinks.classList.toggle('active');
+        hamburger.setAttribute('aria-expanded', navLinks.classList.contains('active'));
+      });
+
+      document.addEventListener('click', (e) => {
+        if (header && !header.contains(e.target) && navLinks.classList.contains('active')) {
+          navLinks.classList.remove('active');
+          hamburger.setAttribute('aria-expanded', 'false');
+        }
+      });
+    }
+
+    // Header scroll shadow
+    window.addEventListener('scroll', () => {
+      header.classList.toggle('scrolled', window.scrollY > 10);
+    }, { passive: true });
+  </script>
+
+</body>
+</html>

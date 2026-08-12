@@ -13,8 +13,10 @@
  * =====================================================
  */
 
-import dotenv from "dotenv";
-dotenv.config();
+import "dotenv/config";
+
+console.log("DB_USER is:", process.env.DB_USER);
+console.log("DB_PASSWORD is:", process.env.DB_PASSWORD);
 
 // Import configured Express app
 import app from "./app.js";
