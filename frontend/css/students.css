@@ -1,0 +1,320 @@
+/* ============================================================
+   students.css — EduCore Students Directory
+   ============================================================ */
+
+/* ── Page content ── */
+.page-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 28px 40px;
+}
+
+/* ── Toolbar ── */
+.workspace-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.search-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 220px;
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.search-input {
+  width: 100%;
+  height: 44px;
+  padding: 0 14px 0 38px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: .9rem;
+  color: var(--text-primary);
+  background: var(--surface);
+  outline: none;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+
+.search-input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, .15);
+}
+
+.search-input::placeholder {
+  color: var(--text-muted);
+}
+
+.filter-select {
+  height: 44px;
+  padding: 0 12px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: .875rem;
+  color: var(--text-primary);
+  background: var(--surface);
+  cursor: pointer;
+  outline: none;
+  transition: border-color var(--transition);
+  min-width: 180px;
+}
+
+.filter-select:focus {
+  border-color: var(--primary);
+}
+
+.result-count {
+  font-size: .8125rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  margin-left: auto;
+}
+
+.toolbar-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* ── State containers ── */
+.hidden{display:none!important}
+#loading-state{display:flex;align-items:center;justify-content:center;padding:64px;font-size:1rem;color:var(--text-2);gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg)}
+.error-box{background:#fef2f2;border:1px solid #fecaca;border-radius:var(--radius-lg);padding:20px 24px;color:var(--error);font-size:.9375rem;font-weight:500}
+.empty-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:64px;text-align:center;color:var(--text-m);font-size:.9375rem}
+
+/* ── Table card ── */
+.table-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);overflow:hidden}
+.table-wrap{overflow-x:auto}
+#studentsTable{width:100%;border-collapse:collapse}
+#studentsTable thead{background:var(--bg)}
+#studentsTable th{padding:11px 16px;font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--text-m);border-bottom:1px solid var(--border);text-align:left;white-space:nowrap}
+.text-right{text-align:right!important}
+#studentsTable td{padding:13px 16px;font-size:.875rem;color:var(--text-2);border-bottom:1px solid var(--border);vertical-align:middle}
+#studentsTable tbody tr:last-child td{border-bottom:none}
+#studentsTable tbody tr:hover td{background:#fafbff}
+
+/* Student info cell */
+.student-info{display:flex;align-items:center;gap:12px}
+.student-avatar{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:#fff;flex-shrink:0}
+.student-fullname{font-weight:600;color:var(--text);font-size:.9rem}
+.student-id-sub{font-size:.75rem;color:var(--text-m)}
+
+/* Badges */
+.dept-badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:var(--radius-full);font-size:.75rem;font-weight:600;background:var(--primary-light);color:var(--primary)}
+.course-tags{display:flex;flex-wrap:wrap;gap:4px}
+.course-tag{display:inline-block;padding:2px 8px;background:#f1f5f9;border-radius:var(--radius-full);font-size:.6875rem;font-weight:600;color:var(--text-2)}
+
+/* Action buttons */
+.action-cell{display:flex;justify-content:flex-end;gap:6px}
+.btn-icon{width:32px;height:32px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;color:var(--text-m);transition:color .15s,border-color .15s,background .15s}
+.btn-icon:hover{color:var(--primary);border-color:var(--primary);background:var(--primary-light)}
+.btn-icon.btn-delete:hover{color:var(--error);border-color:#fecaca;background:#fef2f2}
+
+/* ── MODAL ── */
+.modal-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.5);backdrop-filter:blur(4px);z-index:500;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal-backdrop[hidden]{display:none}
+.modal{background:var(--surface);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);width:100%;max-width:560px;max-height:90vh;overflow-y:auto;animation:slideUp .2s ease}
+@keyframes slideUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.modal-header{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid var(--border)}
+.modal-title{font-size:1.125rem;font-weight:700;color:var(--text)}
+.modal-close{background:none;border:none;cursor:pointer;color:var(--text-m);padding:4px;border-radius:6px;display:flex;transition:color .15s}
+.modal-close:hover{color:var(--text)}
+.modal-body{padding:24px;display:flex;flex-direction:column;gap:16px}
+.modal-footer{display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:16px 24px;border-top:1px solid var(--border)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.form-group{display:flex;flex-direction:column;gap:6px}
+.form-label{font-size:.875rem;font-weight:600;color:var(--text)}
+.req{color:var(--error)}
+.form-input{height:40px;padding:0 12px;border:1.5px solid var(--border);border-radius:var(--radius-md);font-size:.9rem;color:var(--text);background:var(--bg);outline:none;transition:border-color .15s,box-shadow .15s}
+.form-input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(79,70,229,.15);background:var(--surface)}
+.form-input.is-error{border-color:var(--error);box-shadow:0 0 0 3px rgba(220,38,38,.12)}
+.form-input::placeholder{color:var(--text-m)}
+select.form-input{cursor:pointer}
+.form-error{font-size:.8125rem;color:var(--error);font-weight:500;min-height:16px}
+.form-hint{font-size:.8125rem;color:var(--text-m)}
+.btn-cancel{background:var(--bg);color:var(--text-2);border:1.5px solid var(--border);border-radius:var(--radius-md);padding:9px 18px;font-size:.875rem;font-weight:600;cursor:pointer;transition:background .15s}
+.btn-cancel:hover{background:var(--border)}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .page-content {
+    padding: 0 16px 32px;
+  }
+
+  .workspace-toolbar {
+    gap: 8px;
+  }
+
+  .search-wrap {
+    min-width: 100%;
+    order: -1;
+  }
+
+  .filter-select {
+    flex: 1;
+    min-width: 140px;
+  }
+
+  .result-count {
+    flex-basis: 100%;
+    margin-left: 0;
+    text-align: center;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  /* Stack table on mobile */
+  .table-wrap {
+    border: none;
+  }
+
+  #studentsTable thead {
+    display: none;
+  }
+
+  #studentsTable,
+  #studentsTable tbody,
+  #studentsTable tr,
+  #studentsTable td {
+    display: block;
+  }
+
+  #studentsTable tr {
+    margin-bottom: 16px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+
+  #studentsTable td {
+    position: relative;
+    padding-left: 50%;
+    text-align: right;
+    border-bottom: 1px solid var(--border);
+  }
+
+  #studentsTable td:last-child {
+    border-bottom: none;
+  }
+
+  #studentsTable td::before {
+    content: attr(data-label);
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-weight: 600;
+    font-size: .75rem;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    letter-spacing: .06em;
+  }
+
+  .student-info {
+    justify-content: flex-end;
+  }
+
+  .action-cell {
+    justify-content: center;
+    padding: 12px 16px;
+  }
+}
+
+@media (max-width: 540px) {
+  .filter-select {
+    width: 100%;
+  }
+
+  .search-wrap {
+    min-width: 100%;
+  }
+
+  .modal {
+    max-width: 100%;
+    margin: 0;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    max-height: 95vh;
+  }
+
+  .modal-backdrop {
+    align-items: flex-end;
+    padding: 0;
+  }
+}
+
+/* Prevent zoom on input focus (iOS) */
+@media (max-width: 768px) {
+  .search-input,
+  .filter-select,
+  .form-input {
+    font-size: 16px;
+  }
+}
+
+/* ── Dark Mode Contrast & Coverage Adjustments ── */
+body.dark-mode #studentsTable tbody tr:hover td,
+[data-theme="dark"] #studentsTable tbody tr:hover td {
+  background: #334155;
+}
+
+body.dark-mode .course-tag,
+[data-theme="dark"] .course-tag {
+  background: #334155;
+  color: var(--text-primary);
+}
+
+body.dark-mode .form-input,
+body.dark-mode .search-input,
+body.dark-mode .filter-select,
+[data-theme="dark"] .form-input,
+[data-theme="dark"] .search-input,
+[data-theme="dark"] .filter-select {
+  color: var(--text-primary);
+  background-color: var(--bg-surface);
+  border-color: var(--border-color);
+}
+
+body.dark-mode option,
+[data-theme="dark"] option {
+  background-color: #1e293b;
+  color: #f8fafc;
+}
+
+body.dark-mode .empty-box,
+[data-theme="dark"] .empty-box {
+  background-color: var(--bg-surface);
+  border-color: var(--border-color);
+  color: var(--text-secondary);
+}
+
+body.dark-mode #loading-state,
+[data-theme="dark"] #loading-state {
+  background-color: var(--bg-surface);
+  border-color: var(--border-color);
+  color: var(--text-primary);
+}
+
+body.dark-mode .student-fullname,
+body.dark-mode .modal-title,
+body.dark-mode .form-label,
+[data-theme="dark"] .student-fullname,
+[data-theme="dark"] .modal-title,
+[data-theme="dark"] .form-label {
+  color: var(--text-primary);
+}
+
