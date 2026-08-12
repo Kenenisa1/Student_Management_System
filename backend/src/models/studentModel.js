@@ -34,20 +34,17 @@ const createStudent = async(student)=>{
 
     const sql = `
         INSERT INTO students
-        (name,email,department)
+        (name,email,phone,department_id)
 
-        VALUES (?,?,?)
+        VALUES (?,?,?,?)
     `;
 
 
     const values=[
-
         student.name,
-
         student.email,
-
-        student.department
-
+        student.phone,
+        student.department_id
     ];
 
 
@@ -76,9 +73,7 @@ const getAllStudents = async()=>{
 
 
     const [rows] = await pool.execute(
-
-        "SELECT * FROM students"
-
+        "SELECT * FROM students WHERE is_deleted = false"
     );
 
 
@@ -100,11 +95,8 @@ const getStudentById = async(id)=>{
 
 
     const [rows] = await pool.execute(
-
-        "SELECT * FROM students WHERE id=?",
-
+        "SELECT * FROM students WHERE id=? AND is_deleted = false",
         [id]
-
     );
 
 
@@ -126,28 +118,20 @@ const updateStudent = async(id,student)=>{
 
 
     const sql=`
-
         UPDATE students
-
         SET name=?,
             email=?,
-            department=?
-
-        WHERE id=?
-
+            phone=?,
+            department_id=?
+        WHERE id=? AND is_deleted = false
     `;
 
-
     const values=[
-
         student.name,
-
         student.email,
-
-        student.department,
-
+        student.phone,
+        student.department_id,
         id
-
     ];
 
 
@@ -179,11 +163,8 @@ const deleteStudent=async(id)=>{
 
 
     const [result]=await pool.execute(
-
-        "DELETE FROM students WHERE id=?",
-
+        "UPDATE students SET is_deleted = true WHERE id=?",
         [id]
-
     );
 
 
@@ -191,8 +172,66 @@ const deleteStudent=async(id)=>{
 
 };
 
+/**
+ * =====================================================
+ * ASSIGN COURSE TO STUDENT
+ * =====================================================
+ */
+const assignCourseToStudent = async (studentId, courseId) => {
+    const sql = `INSERT INTO student_courses (student_id, course_id) VALUES (?, ?)`;
+    const [result] = await pool.execute(sql, [studentId, courseId]);
+    return result;
+};
 
+/**
+ * =====================================================
+ * GET STUDENTS BY DEPARTMENT
+ * =====================================================
+ */
+const getStudentsByDepartment = async (departmentId) => {
+    const [rows] = await pool.execute(
+        "SELECT * FROM students WHERE department_id=? AND is_deleted = false",
+        [departmentId]
+    );
+    return rows;
+};
 
+/**
+ * =====================================================
+ * GET ACTIVE STUDENTS COUNT
+ * =====================================================
+ */
+const getActiveStudentsCount = async () => {
+    const [rows] = await pool.execute(
+        "SELECT COUNT(*) as count FROM students WHERE is_deleted = false"
+    );
+    return rows[0].count;
+};
+
+/**
+ * =====================================================
+ * GET STUDENTS BY DEPARTMENT
+ * =====================================================
+ */
+const getStudentsByDepartment = async (departmentId) => {
+    const [rows] = await pool.execute(
+        "SELECT * FROM students WHERE department_id=? AND is_deleted = false",
+        [departmentId]
+    );
+    return rows;
+};
+
+/**
+ * =====================================================
+ * GET ACTIVE STUDENTS COUNT
+ * =====================================================
+ */
+const getActiveStudentsCount = async () => {
+    const [rows] = await pool.execute(
+        "SELECT COUNT(*) as count FROM students WHERE is_deleted = false"
+    );
+    return rows[0].count;
+};
 
 
 // Export functions
@@ -201,5 +240,8 @@ export {
     getAllStudents,
     getStudentById,
     updateStudent,
-    deleteStudent
+    deleteStudent,
+    assignCourseToStudent,
+    getStudentsByDepartment,
+    getActiveStudentsCount
 };
