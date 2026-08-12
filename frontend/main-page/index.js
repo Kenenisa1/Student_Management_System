@@ -8,16 +8,6 @@
 // lifting the visibility:hidden gate declared in index.html <head>.
 EduAuth.guard();
 
-// ── 2. Sync header: swap "Log In" → "Dashboard + Log Out" ────
-(function syncHeaderAuth() {
-  const actionWrap = document.querySelector('.header-actions');
-  if (!actionWrap) return;
-  actionWrap.innerHTML = `
-    <a href="dashboard.html" class="btn btn-ghost">Dashboard</a>
-    <button id="header-logout-btn" class="btn btn-primary" type="button">Log Out</button>`;
-  const logoutBtn = document.getElementById('header-logout-btn');
-  if (logoutBtn) logoutBtn.addEventListener('click', () => EduAuth.logout());
-})();
 
 // ── 3. Inject "Log Out" link into mobile nav menu ─────────────
 
