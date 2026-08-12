@@ -208,6 +208,31 @@ const getActiveStudentsCount = async () => {
     return rows[0].count;
 };
 
+/**
+ * =====================================================
+ * GET STUDENTS BY DEPARTMENT
+ * =====================================================
+ */
+const getStudentsByDepartment = async (departmentId) => {
+    const [rows] = await pool.execute(
+        "SELECT * FROM students WHERE department_id=? AND is_deleted = false",
+        [departmentId]
+    );
+    return rows;
+};
+
+/**
+ * =====================================================
+ * GET ACTIVE STUDENTS COUNT
+ * =====================================================
+ */
+const getActiveStudentsCount = async () => {
+    const [rows] = await pool.execute(
+        "SELECT COUNT(*) as count FROM students WHERE is_deleted = false"
+    );
+    return rows[0].count;
+};
+
 
 // Export functions
 export {
