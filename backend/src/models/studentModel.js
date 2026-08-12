@@ -209,9 +209,6 @@ const getActiveStudentsCount = async () => {
 };
 
 
-
-
-
 // Export functions
 export {
     createStudent,
