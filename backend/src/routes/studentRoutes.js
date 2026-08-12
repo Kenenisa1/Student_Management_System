@@ -71,6 +71,21 @@ router.post("/",studentController.createStudent);
 
 router.get( "/",studentController.getAllStudents);
 
+/**
+ * =====================================================
+ * GET ACTIVE STUDENTS COUNT
+ * =====================================================
+ */
+router.get("/count", studentController.getStudentsCount);
+
+/**
+ * =====================================================
+ * GET STUDENTS BY DEPARTMENT
+ * =====================================================
+ */
+router.get("/department/:deptId", studentController.getStudentsByDepartment);
+
+
 
 /**
  * =====================================================
@@ -132,6 +147,13 @@ router.put("/:id",studentController.updateStudent);
  */
 
 router.delete("/:id",studentController.deleteStudent);
+
+/**
+ * =====================================================
+ * ASSIGN COURSE TO STUDENT
+ * =====================================================
+ */
+router.post("/:id/courses", studentController.assignCourse);
 
 
 

@@ -172,8 +172,41 @@ const deleteStudent=async(id)=>{
 
 };
 
+/**
+ * =====================================================
+ * ASSIGN COURSE TO STUDENT
+ * =====================================================
+ */
+const assignCourseToStudent = async (studentId, courseId) => {
+    const sql = `INSERT INTO student_courses (student_id, course_id) VALUES (?, ?)`;
+    const [result] = await pool.execute(sql, [studentId, courseId]);
+    return result;
+};
 
+/**
+ * =====================================================
+ * GET STUDENTS BY DEPARTMENT
+ * =====================================================
+ */
+const getStudentsByDepartment = async (departmentId) => {
+    const [rows] = await pool.execute(
+        "SELECT * FROM students WHERE department_id=? AND is_deleted = false",
+        [departmentId]
+    );
+    return rows;
+};
 
+/**
+ * =====================================================
+ * GET ACTIVE STUDENTS COUNT
+ * =====================================================
+ */
+const getActiveStudentsCount = async () => {
+    const [rows] = await pool.execute(
+        "SELECT COUNT(*) as count FROM students WHERE is_deleted = false"
+    );
+    return rows[0].count;
+};
 
 
 // Export functions
@@ -182,5 +215,8 @@ export {
     getAllStudents,
     getStudentById,
     updateStudent,
-    deleteStudent
+    deleteStudent,
+    assignCourseToStudent,
+    getStudentsByDepartment,
+    getActiveStudentsCount
 };
