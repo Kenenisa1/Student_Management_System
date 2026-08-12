@@ -30,12 +30,18 @@
     }
   }
 
+  /** Helper to get relative login page path based on current location */
+  function getLoginUrl() {
+    const isMainPage = window.location.pathname.includes('/main-page/') || window.location.href.includes('/main-page/');
+    return isMainPage ? '../login.html' : 'login.html';
+  }
+
   /** Clear all auth tokens and user data, then redirect to login. */
   function logout() {
     localStorage.removeItem('isAuthenticated');
     localStorage.removeItem('educore_user');
     sessionStorage.removeItem('educore_user');
-    window.location.href = 'login.html';
+    window.location.href = getLoginUrl();
   }
 
   // ── Auth guard ───────────────────────────────────────────────
@@ -49,7 +55,7 @@
    */
   function guard() {
     if (localStorage.getItem('isAuthenticated') !== 'true') {
-      window.location.href = 'login.html';
+      window.location.href = getLoginUrl();
       return; // halt remaining script execution in the caller
     }
     // Lift the visibility:hidden gate used on index.html
@@ -203,21 +209,14 @@
       document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
 
       // Inject mobile Log Out link
-      if (!navLinks.querySelector('.nav-link--mobile-logout')) {
-        const a = document.createElement('a');
-        a.href      = '#';
-        a.className = 'nav-link nav-link--mobile-logout';
-        a.textContent = '🔐 Log Out';
-        a.addEventListener('click', e => { e.preventDefault(); logout(); });
-        navLinks.appendChild(a);
-      }
+     
     }
 
-    // Header-actions: inject Dashboard + Log Out buttons
+    // Header-actions: injec Log Out buttons
     const headerActions = document.getElementById('header-actions');
     if (headerActions && !headerActions.querySelector('.btn-logout')) {
       headerActions.innerHTML = `
-        <a href="dashboard.html" class="btn btn-ghost">Dashboard</a>
+        
         <button class="btn btn-primary" data-action="logout" type="button">Log Out</button>`;
     }
 
