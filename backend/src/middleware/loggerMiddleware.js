@@ -15,17 +15,12 @@
 
 const logger = (req,res,next)=>{
 
+    const start = new Date();
 
-    console.log(
-        `${req.method} ${req.originalUrl}`
-    );
-
-
-    console.log(
-        "Time:",
-        new Date().toISOString()
-    );
-
+    res.on('finish', () => {
+        const duration = new Date() - start;
+        console.log(`[${start.toISOString()}] ${req.method} ${req.originalUrl} ${res.statusCode} - ${duration}ms`);
+    });
 
     /**
      * next()
@@ -38,7 +33,5 @@ const logger = (req,res,next)=>{
     next();
 
 };
-
-
 
 export default logger;
