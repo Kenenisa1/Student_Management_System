@@ -23,7 +23,6 @@ import express from "express";
 // Create router object
 const router = express.Router();
 
-
 import * as studentController from "../controllers/studentController.js";
 import { validateStudent } from "../middleware/validationMiddleware.js";
 
