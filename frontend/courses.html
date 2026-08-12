@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Courses — JU Student Management</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%234f46e5'/%3E%3Cpath d='M16 8L6 13l10 5 10-5z' fill='white'/%3E%3C/svg%3E"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/index.css"/>
+  <link rel="stylesheet" href="css/courses.css"/>
+  <link rel="stylesheet" href="css/animations.css"/>
+  <link rel="stylesheet" href="css/auth.css"/>
+  <style>html:not(.auth-ready) body { visibility: hidden; }</style>
+  <script src="js/theme-toggle.js"></script>
+</head>
+<body>
+
+  <!-- SITE-WIDE NAVIGATION HEADER -->
+  <header class="site-header" id="site-header">
+    <div class="container header-inner">
+      <a href="index.html" class="logo" aria-label="Home">
+        <div class="logo-icon" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>
+          </svg>
+        </div>
+        <span class="logo-text">JU Student Management</span>
+      </a>
+      <nav class="nav-links" id="nav-links" role="navigation" aria-label="Main navigation">
+        <a href="index.html"       class="nav-link">🏠 Home</a>
+        <a href="dashboard.html"   class="nav-link">📊 Dashboard</a>
+        <a href="students.html"    class="nav-link">👨‍🎓 Students</a>
+        <a href="departments.html" class="nav-link">🏫 Departments</a>
+        <a href="courses.html"     class="nav-link nav-link--active">📚 Courses</a>
+        <a href="reports.html"     class="nav-link">📈 Reports</a>
+      </nav>
+      <div class="header-actions" id="header-actions">
+        <button id="theme-toggle" class="theme-toggle" title="Toggle theme" aria-label="Switch theme" type="button">
+          <span class="theme-toggle-slider">
+            <span class="theme-toggle-icon theme-toggle-icon-sun">☀️</span>
+            <span class="theme-toggle-icon theme-toggle-icon-moon">🌙</span>
+          </span>
+        </button>
+      </div>
+      <button id="landing-hamburger-btn" class="hamburger-btn" aria-label="Toggle navigation" aria-expanded="false">☰</button>
+    </div>
+  </header>
+
+  <!-- PAGE CONTENT -->
+  <main class="app-page-content">
+
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Course Catalogue</h1>
+        <p class="page-sub">Browse all available courses, instructors, and credit hours.</p>
+      </div>
+      <button class="btn-primary" id="add-course-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Course
+      </button>
+    </div>
+
+    <!-- TOOLBAR -->
+    <div class="workspace-toolbar">
+      <div class="search-wrap">
+        <svg class="search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="search" id="search-input" class="search-input" placeholder="Search by name, code, or instructor…" aria-label="Search courses"/>
+      </div>
+      <select id="dept-filter" class="filter-select" aria-label="Filter by department">
+        <option value="">All Departments</option>
+        <option value="Computer Science">Computer Science</option>
+        <option value="Business Administration">Business Administration</option>
+        <option value="Engineering">Engineering</option>
+        <option value="Natural Sciences">Natural Sciences</option>
+        <option value="Arts &amp; Humanities">Arts &amp; Humanities</option>
+        <option value="Mathematics">Mathematics</option>
+      </select>
+      <select id="credit-filter" class="filter-select" aria-label="Filter by credits">
+        <option value="">All Credits</option>
+        <option value="1">1 Credit</option>
+        <option value="2">2 Credits</option>
+        <option value="3">3 Credits</option>
+        <option value="4">4 Credits</option>
+      </select>
+      <span class="result-count" id="result-count"></span>
+    </div>
+
+    <div class="courses-grid" id="courses-grid"></div>
+    <div class="empty-courses hidden" id="empty-courses">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      <p>No courses match your search.</p>
+    </div>
+
+  </main>
+
+  <!-- ADD / EDIT COURSE MODAL -->
+  <div class="modal-backdrop" id="modal-backdrop" hidden aria-modal="true" role="dialog" aria-labelledby="modal-title">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modal-title">Add New Course</h2>
+        <button class="modal-close" id="modal-close" aria-label="Close modal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+      <form id="course-form" novalidate>
+        <input type="hidden" id="course-edit-id"/>
+        <div class="modal-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="c-code">Course Code <span class="req">*</span></label>
+              <input type="text" id="c-code" class="form-input" placeholder="e.g. CS101" required/>
+              <span class="form-error" id="err-c-code"></span>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="c-credits">Credit Hours <span class="req">*</span></label>
+              <select id="c-credits" class="form-input" required>
+                <option value="">Select…</option>
+                <option value="1">1 Credit</option>
+                <option value="2">2 Credits</option>
+                <option value="3">3 Credits</option>
+                <option value="4">4 Credits</option>
+              </select>
+              <span class="form-error" id="err-c-credits"></span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="c-name">Course Name <span class="req">*</span></label>
+            <input type="text" id="c-name" class="form-input" placeholder="e.g. Introduction to Programming" required/>
+            <span class="form-error" id="err-c-name"></span>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label" for="c-dept">Department <span class="req">*</span></label>
+              <select id="c-dept" class="form-input" required>
+                <option value="">Select department…</option>
+                <option>Computer Science</option>
+                <option>Business Administration</option>
+                <option>Engineering</option>
+                <option>Natural Sciences</option>
+                <option>Arts &amp; Humanities</option>
+                <option>Mathematics</option>
+              </select>
+              <span class="form-error" id="err-c-dept"></span>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="c-instructor">Instructor</label>
+              <input type="text" id="c-instructor" class="form-input" placeholder="e.g. Prof. Alan Turing"/>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="c-enrolled">Enrolled Students</label>
+            <input type="number" id="c-enrolled" class="form-input" placeholder="0" min="0"/>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="c-desc">Description</label>
+            <textarea id="c-desc" class="form-input form-textarea" rows="3" placeholder="Brief course description…"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn-cancel" id="modal-cancel">Cancel</button>
+          <button type="submit" class="btn-primary" id="modal-submit">Save Course</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/auth.js"></script>
+  <script src="js/courses.js"></script>
+</body>
+</html>
