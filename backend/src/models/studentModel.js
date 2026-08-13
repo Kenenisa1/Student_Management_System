@@ -178,15 +178,6 @@ const getActiveStudentsCount = async () => {
         WHERE is_deleted = false
     `;
 
-    const [rows] = await pool.execute(sql);
-
-    return rows[0].count;
-};
-
-// =====================================================
-// EXPORT
-// =====================================================
-
 export {
     createStudent,
     getAllStudents,
