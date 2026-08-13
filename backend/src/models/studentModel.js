@@ -1,132 +1,99 @@
 /**
  * =====================================================
  * studentModel.js
- * -----------------------------------------------------
+ * =====================================================
  * Purpose:
- * Handle all database operations for students table.
- *
- * Responsibilities:
- * - Insert student
- * - Get students
- * - Get student by ID
- * - Update student
- * - Delete student
+ * Handle all database operations for the students table.
  * =====================================================
  */
 
-
-// Import database connection pool
 import { pool } from "../config/db.js";
 
+// =====================================================
+// CREATE STUDENT
+// =====================================================
 
-
-/**
- * =====================================================
- * CREATE STUDENT
- * =====================================================
- *
- * Insert new student into database
- *
- */
-
-const createStudent = async(student)=>{
-
-
+const createStudent = async (student) => {
     const sql = `
         INSERT INTO students
-        (name,email,phone,department_id)
-
-        VALUES (?,?,?,?)
+        (name, email, phone, department_id)
+        VALUES (?, ?, ?, ?)
     `;
 
-
-    const values=[
+    const values = [
         student.name,
         student.email,
         student.phone,
         student.department_id
     ];
 
-
-
-    const [result] = await pool.execute(
-        sql,
-        values
-    );
-
+    const [result] = await pool.execute(sql, values);
 
     return result;
-
 };
 
+// =====================================================
+// GET ALL STUDENTS
+// =====================================================
 
-
-
-
-/**
- * =====================================================
- * GET ALL STUDENTS
- * =====================================================
- */
-
-const getAllStudents = async()=>{
-
-
-    const [rows] = await pool.execute(
-        "SELECT * FROM students WHERE is_deleted = false"
-    );
-
-
-    return rows;
-
-};
-
-
-
-
-
-/**
- * =====================================================
- * GET STUDENT BY ID
- * =====================================================
- */
-
-const getStudentById = async(id)=>{
-
-
-    const [rows] = await pool.execute(
-        "SELECT * FROM students WHERE id=? AND is_deleted = false",
-        [id]
-    );
-
-
-    return rows[0];
-
-};
-
-
-
-
-
-/**
- * =====================================================
- * UPDATE STUDENT
- * =====================================================
- */
-
-const updateStudent = async(id,student)=>{
-
-
-    const sql=`
-        UPDATE students
-        SET name=?,
-            email=?,
-            phone=?,
-            department_id=?
-        WHERE id=? AND is_deleted = false
+const getAllStudents = async () => {
+    const sql = `
+        SELECT
+            id,
+            name,
+            email,
+            phone,
+            department_id,
+            is_deleted
+        FROM students
+        WHERE is_deleted = false
     `;
 
-    const values=[
+    const [rows] = await pool.execute(sql);
+
+    return rows;
+};
+
+// =====================================================
+// GET STUDENT BY ID
+// =====================================================
+
+const getStudentById = async (id) => {
+    const sql = `
+        SELECT
+            id,
+            name,
+            email,
+            phone,
+            department_id,
+            is_deleted
+        FROM students
+        WHERE id = ?
+        AND is_deleted = false
+    `;
+
+    const [rows] = await pool.execute(sql, [id]);
+
+    return rows[0];
+};
+
+// =====================================================
+// UPDATE STUDENT
+// =====================================================
+
+const updateStudent = async (id, student) => {
+    const sql = `
+        UPDATE students
+        SET
+            name = ?,
+            email = ?,
+            phone = ?,
+            department_id = ?
+        WHERE id = ?
+        AND is_deleted = false
+    `;
+
+    const values = [
         student.name,
         student.email,
         student.phone,
@@ -134,82 +101,83 @@ const updateStudent = async(id,student)=>{
         id
     ];
 
-
-
-    const [result]=await pool.execute(
-
-        sql,
-
-        values
-
-    );
-
+    const [result] = await pool.execute(sql, values);
 
     return result;
-
 };
 
+// =====================================================
+// DELETE STUDENT
+// =====================================================
 
+const deleteStudent = async (id) => {
+    const sql = `
+        UPDATE students
+        SET is_deleted = true
+        WHERE id = ?
+    `;
 
-
-
-/**
- * =====================================================
- * DELETE STUDENT
- * =====================================================
- */
-
-const deleteStudent=async(id)=>{
-
-
-    const [result]=await pool.execute(
-        "UPDATE students SET is_deleted = true WHERE id=?",
-        [id]
-    );
-
+    const [result] = await pool.execute(sql, [id]);
 
     return result;
-
 };
 
-/**
- * =====================================================
- * ASSIGN COURSE TO STUDENT
- * =====================================================
- */
+// =====================================================
+// ASSIGN COURSE TO STUDENT
+// =====================================================
+
 const assignCourseToStudent = async (studentId, courseId) => {
-    const sql = `INSERT INTO student_courses (student_id, course_id) VALUES (?, ?)`;
-    const [result] = await pool.execute(sql, [studentId, courseId]);
+    const sql = `
+        INSERT INTO student_courses
+        (student_id, course_id)
+        VALUES (?, ?)
+    `;
+
+    const [result] = await pool.execute(
+        sql,
+        [studentId, courseId]
+    );
+
     return result;
 };
 
-/**
- * =====================================================
- * GET STUDENTS BY DEPARTMENT
- * =====================================================
- */
+// =====================================================
+// GET STUDENTS BY DEPARTMENT
+// =====================================================
+
 const getStudentsByDepartment = async (departmentId) => {
+    const sql = `
+        SELECT
+            id,
+            name,
+            email,
+            phone,
+            department_id,
+            is_deleted
+        FROM students
+        WHERE department_id = ?
+        AND is_deleted = false
+    `;
+
     const [rows] = await pool.execute(
-        "SELECT * FROM students WHERE department_id=? AND is_deleted = false",
+        sql,
         [departmentId]
     );
+
     return rows;
 };
 
-/**
- * =====================================================
- * GET ACTIVE STUDENTS COUNT
- * =====================================================
- */
+// =====================================================
+// GET ACTIVE STUDENTS COUNT
+// =====================================================
+
 const getActiveStudentsCount = async () => {
-    const [rows] = await pool.execute(
-        "SELECT COUNT(*) as count FROM students WHERE is_deleted = false"
-    );
-    return rows[0].count;
-};
+    const sql = `
+        SELECT COUNT(*) AS count
+        FROM students
+        WHERE is_deleted = false
+    `;
 
-
-// Export functions
 export {
     createStudent,
     getAllStudents,
