@@ -17,6 +17,9 @@ export const requireAuth = (req, res, next) => {
         req.user = decoded; // { id, email, role, iat, exp }
         next();
     } catch (err) {
+        if (err.name === 'TokenExpiredError') {
+            return res.status(401).json({ success: false, message: 'Token expired. Please log in again.' });
+        }
         return res.status(401).json({ success: false, message: 'Unauthorized. Invalid token.' });
     }
 };
