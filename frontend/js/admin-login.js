@@ -2,12 +2,15 @@
  * js/login.js — EduCore Authentication
  */
 
-// Only auto-redirect if BOTH the flag AND the token exist
 const _token = localStorage.getItem('educore_token') || sessionStorage.getItem('educore_token');
 const _flagOk = localStorage.getItem('isAuthenticated') === 'true';
 if (_token && _flagOk) {
-  const u = JSON.parse(localStorage.getItem('educore_user') || sessionStorage.getItem('educore_user') || '{}');
-  if (u.role && u.role !== 'student') window.location.replace('dashboard.html');
+  try {
+    const u = JSON.parse(localStorage.getItem('educore_user') || sessionStorage.getItem('educore_user') || '{}');
+    if (u.role === 'student') window.location.replace('../student-dashboard.html');
+    else if (u.role === 'teacher') window.location.replace('../teacher-home.html');
+    else if (u.role === 'admin' || u.role === 'superadmin') window.location.replace('dashboard.html');
+  } catch (_) {}
 }
 
 const form = document.getElementById('login-form');
@@ -89,6 +92,8 @@ form.addEventListener('submit', async (e) => {
 
     if (data.user.role === 'student') {
       window.location.href = '../student-dashboard.html';
+    } else if (data.user.role === 'teacher') {
+      window.location.href = '../teacher-home.html';
     } else {
       window.location.href = 'dashboard.html';
     }

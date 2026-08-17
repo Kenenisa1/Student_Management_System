@@ -135,20 +135,13 @@ form.addEventListener('submit', async (e) => {
         const data = await res.json();
         if (!res.ok) throw new Error(data.message || 'Registration failed.');
 
-        // Store session
-        localStorage.setItem('educore_user',      JSON.stringify(data.user));
-        localStorage.setItem('educore_token',     data.token);
-        localStorage.setItem('isAuthenticated',   'true');
-
-        // Show success briefly, then redirect
-        formSuccess.textContent = `✅ Account created! Redirecting…`;
+        // Show success briefly, then redirect to login
+        formSuccess.textContent = `✅ Account created successfully! Please log in.`;
         formSuccess.hidden = false;
 
         setTimeout(() => {
-            if (role === 'student')  window.location.href = 'student-dashboard.html';
-            else if (role === 'teacher') window.location.href = 'teacher-home.html';
-            else window.location.href = 'admin/dashboard.html';
-        }, 800);
+            window.location.href = 'login.html';
+        }, 1500);
 
     } catch (err) {
         formError.textContent = err.message;
