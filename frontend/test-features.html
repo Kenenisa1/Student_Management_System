@@ -57,8 +57,8 @@
       <div class="header-actions" id="header-actions">
         <button id="theme-toggle" class="theme-toggle" title="Toggle theme" aria-label="Switch theme" type="button">
           <span class="theme-toggle-slider">
-            <span class="theme-toggle-icon theme-toggle-icon-sun">☀️</span>
-            <span class="theme-toggle-icon theme-toggle-icon-moon">🌙</span>
+            <span class="theme-toggle-icon theme-toggle-icon-sun"><i data-lucide="sun"></i></span>
+            <span class="theme-toggle-icon theme-toggle-icon-moon"><i data-lucide="moon"></i></span>
           </span>
         </button>
         <button class="btn btn-ghost">Sign In</button>
@@ -179,7 +179,7 @@
 
   <!-- Section 5: Dark Mode -->
   <section class="test-section">
-    <h2>🌙 Dark Mode</h2>
+    <h2><i data-lucide="moon"></i> Dark Mode</h2>
     <p>Change your system preferences to see dark mode in action</p>
     <div class="test-card">
       <h3 style="margin-bottom: 12px; font-size: 1rem;">Theme Detection</h3>
@@ -221,11 +221,18 @@
     // Dark mode detector
     function updateTheme() {
       const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      document.getElementById('theme').textContent = isDark ? '🌙 Dark Mode Active' : '☀️ Light Mode Active';
+      document.getElementById('theme').textContent = isDark ? '<i data-lucide="moon"></i> Dark Mode Active' : '<i data-lucide="sun"></i> Light Mode Active';
     }
     updateTheme();
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', updateTheme);
   </script>
 
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+    });
+  </script>
 </body>
 </html>

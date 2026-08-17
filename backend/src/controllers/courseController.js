@@ -41,9 +41,10 @@ export const getAllCourses = async (req, res) => {
         });
 
     } catch (error) {
+        console.error('[courseController.getAllCourses]', error.message, error.sqlMessage || '');
         res.status(500).json({
             success: false,
-            message: error.message
+            message: error.sqlMessage || error.message
         });
     }
 };

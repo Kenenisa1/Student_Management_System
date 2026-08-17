@@ -177,13 +177,13 @@
         <a href="#features" class="nav-link nav-link--active">🎨 Features</a>
         <a href="#colors" class="nav-link">🌈 Colors</a>
         <a href="#examples" class="nav-link">📝 Examples</a>
-        <a href="dashboard.html" class="nav-link">📊 Dashboard</a>
+        <a href="dashboard.html" class="nav-link"><i data-lucide="bar-chart-2"></i> Dashboard</a>
       </nav>
       <div class="header-actions" id="header-actions">
         <button id="theme-toggle" class="theme-toggle" title="Toggle theme" aria-label="Switch theme" type="button">
           <span class="theme-toggle-slider">
-            <span class="theme-toggle-icon theme-toggle-icon-sun">☀️</span>
-            <span class="theme-toggle-icon theme-toggle-icon-moon">🌙</span>
+            <span class="theme-toggle-icon theme-toggle-icon-sun"><i data-lucide="sun"></i></span>
+            <span class="theme-toggle-icon theme-toggle-icon-moon"><i data-lucide="moon"></i></span>
           </span>
         </button>
       </div>
@@ -202,7 +202,7 @@
         Your preference is saved automatically and persists across page visits.
       </p>
       <div class="current-theme">
-        <span id="theme-icon">☀️</span>
+        <span id="theme-icon"><i data-lucide="sun"></i></span>
         <span id="theme-name">Light Mode</span>
       </div>
     </div>
@@ -211,7 +211,7 @@
     <div class="instructions">
       <h2>🎯 How to Use</h2>
       <ol>
-        <li>Look for the <strong>theme toggle button</strong> (☀️/🌙) in the header (top-right)</li>
+        <li>Look for the <strong>theme toggle button</strong> (<i data-lucide="sun"></i>/<i data-lucide="moon"></i>) in the header (top-right)</li>
         <li><strong>Click the toggle</strong> to switch between light and dark modes</li>
         <li>Watch the <strong>smooth transition</strong> as colors change instantly</li>
         <li>Your preference is <strong>saved automatically</strong> in browser storage</li>
@@ -321,7 +321,7 @@
     // Update theme display
     function updateThemeDisplay() {
       const theme = document.documentElement.getAttribute('data-theme') || 'light';
-      document.getElementById('theme-icon').textContent = theme === 'dark' ? '🌙' : '☀️';
+      document.getElementById('theme-icon').textContent = theme === 'dark' ? '<i data-lucide="moon"></i>' : '<i data-lucide="sun"></i>';
       document.getElementById('theme-name').textContent = theme === 'dark' ? 'Dark Mode' : 'Light Mode';
     }
 
@@ -358,5 +358,12 @@
     }, { passive: true });
   </script>
 
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+    });
+  </script>
 </body>
 </html>

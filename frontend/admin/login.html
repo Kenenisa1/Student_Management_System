@@ -2,13 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Login — JU Student Management</title>
+  <title>Staff Login — JU Student Management</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%234f46e5'/%3E%3Cpath d='M16 8L6 13l10 5 10-5z' fill='white'/%3E%3C/svg%3E" />
   <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="css/index.css" />
-  <link rel="stylesheet" href="css/login.css" />
-  <script src="js/theme-toggle.js"></script>
+  <link rel="stylesheet" href="../css/index.css" />
+  <link rel="stylesheet" href="../css/login.css" />
+  <script src="../js/theme-toggle.js"></script>
 </head>
 <body>
   <!-- SITE-WIDE NAVIGATION HEADER -->
@@ -39,8 +39,8 @@
         <div class="logo-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></div>
         <span>JU Student Management</span>
       </div>
-      <h1 class="login-title">Welcome back</h1>
-      <p class="login-sub">Sign in </p>
+      <h1 class="login-title">Staff Login</h1>
+      <p class="login-sub">Sign in to manage the system</p>
       <div id="form-error" class="form-error" role="alert" aria-live="polite" hidden></div>
       <form id="login-form" novalidate>
         
@@ -74,12 +74,11 @@
         </button>
       </form>
       <div style="margin-top:20px;text-align:center;font-size:0.875rem;">
-        <span style="color:var(--text-secondary)">Don't have an account?</span>
-        <a href="register.html" style="color:var(--primary);font-weight:600;text-decoration:none;">Create account</a>
+        <span style="color:var(--text-secondary)">Students login <a href="../login.html" style="color:var(--primary);font-weight:600;text-decoration:none;">here</a></span>
       </div>
     </div>
   </main>
-  <script src="js/login.js"></script>
+  <script src="../js/admin-login.js"></script>
 
   <script src="https://unpkg.com/lucide@latest"></script>
   <script>

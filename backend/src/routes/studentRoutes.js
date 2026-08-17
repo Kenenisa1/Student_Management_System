@@ -1,162 +1,37 @@
 /**
- * =====================================================
  * studentRoutes.js
- * -----------------------------------------------------
- * Purpose:
- * Define all student API endpoints.
- *
- * Routes connect:
- *
- * HTTP Request
- *        |
- *        ↓
- * Controller Function
- *
- * =====================================================
+ * ─────────────────────────────────────────────────────────────────────
+ * Role-based access control (RBAC):
+ *   GET  /api/students        → admin, superadmin, teacher
+ *   GET  /api/students/:id    → admin, superadmin, teacher, OR the student themselves
+ *   POST /api/students        → admin, superadmin only
+ *   PUT  /api/students/:id    → admin, superadmin only
+ *   DELETE /api/students/:id  → admin, superadmin only
+ * All routes already guarded by requireAuth in app.js.
  */
 
+import express from 'express';
+import * as studentController from '../controllers/studentController.js';
+import { validateStudent }    from '../middleware/validationMiddleware.js';
+import { requireRoles }       from '../middleware/authMiddleware.js';
 
-// Import express router
-import express from "express";
-
-
-// Create router object
 const router = express.Router();
 
-import * as studentController from "../controllers/studentController.js";
-import { validateStudent } from "../middleware/validationMiddleware.js";
+const adminOnly    = requireRoles('admin', 'superadmin');
+const staffOrAdmin = requireRoles('admin', 'superadmin', 'teacher');
 
+// ── READ (admin + teacher) ────────────────────────────────────
+router.get('/',                   staffOrAdmin, studentController.getAllStudents);
+router.get('/count',              staffOrAdmin, studentController.getStudentsCount);
+router.get('/department/:deptId', staffOrAdmin, studentController.getStudentsByDepartment);
+router.get('/:id',                staffOrAdmin, studentController.getStudentById);
 
+// ── WRITE (admin + superadmin only) ──────────────────────────
+router.post('/',       adminOnly, validateStudent, studentController.createStudent);
+router.put('/:id',     adminOnly, validateStudent, studentController.updateStudent);
+router.delete('/:id',  adminOnly, studentController.deleteStudent);
 
-/**
- * =====================================================
- * CREATE STUDENT
- * =====================================================
- *
- * HTTP Method:
- * POST
- *
- * URL:
- * /api/students
- *
- * Request Body:
- *
- * {
- *   "name":"Abebe",
- *   "email":"abebe@gmail.com",
- *   "department":"Computer Science"
- * }
- *
- */
+// ── Course assignment (admin or teacher) ─────────────────────
+router.post('/:id/courses', staffOrAdmin, studentController.assignCourse);
 
-router.post("/", validateStudent, studentController.createStudent);
-
-
-
-
-
-/**
- * =====================================================
- * GET ALL STUDENTS
- * =====================================================
- *
- * HTTP Method:
- * GET
- *
- * URL:
- * /api/students
- *
- */
-
-router.get( "/",studentController.getAllStudents);
-
-/**
- * =====================================================
- * GET ACTIVE STUDENTS COUNT
- * =====================================================
- */
-router.get("/count", studentController.getStudentsCount);
-
-/**
- * =====================================================
- * GET STUDENTS BY DEPARTMENT
- * =====================================================
- */
-router.get("/department/:deptId", studentController.getStudentsByDepartment);
-
-
-
-/**
- * =====================================================
- * GET STUDENT BY ID
- * =====================================================
- *
- * HTTP Method:
- * GET
- *
- * URL:
- * /api/students/:id
- *
- * Example:
- *
- * /api/students/1
- *
- */
-
-router.get("/:id",studentController.getStudentById);
-
-
-
-
-
-/**
- * =====================================================
- * UPDATE STUDENT
- * =====================================================
- *
- * HTTP Method:
- * PUT
- *
- * URL:
- * /api/students/:id
- *
- * Example:
- *
- * PUT /api/students/1
- *
- */
-
-router.put("/:id", validateStudent, studentController.updateStudent);
-
-
-
-
-
-/**
- * =====================================================
- * DELETE STUDENT
- * =====================================================
- *
- * HTTP Method:
- * DELETE
- *
- * URL:
- * /api/students/:id
- *
- */
-
-router.delete("/:id",studentController.deleteStudent);
-
-/**
- * =====================================================
- * ASSIGN COURSE TO STUDENT
- * =====================================================
- */
-router.post("/:id/courses", studentController.assignCourse);
-
-
-
-
-
-// Export router
 export default router;

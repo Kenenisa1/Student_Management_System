@@ -8,19 +8,19 @@
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="css/index.css"/>
-  <link rel="stylesheet" href="css/students.css"/>
-  <link rel="stylesheet" href="css/animations.css"/>
-  <link rel="stylesheet" href="css/auth.css"/>
+  <link rel="stylesheet" href="../css/index.css"/>
+  <link rel="stylesheet" href="../css/students.css"/>
+  <link rel="stylesheet" href="../css/animations.css"/>
+  <link rel="stylesheet" href="../css/auth.css"/>
   <style>html:not(.auth-ready) body { visibility: hidden; }</style>
-  <script src="js/theme-toggle.js"></script>
+  <script src="../js/theme-toggle.js"></script>
 </head>
 <body>
 
   <!-- SITE-WIDE NAVIGATION HEADER -->
   <header class="site-header" id="site-header">
     <div class="container header-inner">
-      <a href="main-page/index.html" class="logo" aria-label="Home">
+      <a href="dashboard.html" class="logo" aria-label="Home">
         <div class="logo-icon" aria-hidden="true">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>
@@ -29,18 +29,18 @@
         <span class="logo-text">JU Student Management</span>
       </a>
       <nav class="nav-links" id="nav-links" role="navigation" aria-label="Main navigation">
-        <a href="main-page/index.html"       class="nav-link">🏠 Home</a>
-        <a href="dashboard.html"   class="nav-link">📊 Dashboard</a>
-        <a href="students.html"    class="nav-link nav-link--active">👨‍🎓 Students</a>
-        <a href="departments.html" class="nav-link">🏫 Departments</a>
-        <a href="courses.html"     class="nav-link">📚 Courses</a>
-        <a href="reports.html"     class="nav-link">📈 Reports</a>
+        <a href="../index.html"    class="nav-link"><i data-lucide="home"></i> Home</a>
+        <a href="dashboard.html"   class="nav-link "><i data-lucide="bar-chart-2"></i> Dashboard</a>
+        <a href="students.html"    class="nav-link admin-only nav-link--active"><i data-lucide="users"></i> Students</a>
+        <a href="departments.html" class="nav-link admin-only "><i data-lucide="building"></i> Departments</a>
+        <a href="courses.html"     class="nav-link "><i data-lucide="book"></i> Courses</a>
+        <a href="reports.html"     class="nav-link admin-only "><i data-lucide="trending-up"></i> Reports</a>
       </nav>
       <div class="header-actions" id="header-actions">
         <button id="theme-toggle" class="theme-toggle" title="Toggle theme" aria-label="Switch theme" type="button">
           <span class="theme-toggle-slider">
-            <span class="theme-toggle-icon theme-toggle-icon-sun">☀️</span>
-            <span class="theme-toggle-icon theme-toggle-icon-moon">🌙</span>
+            <span class="theme-toggle-icon theme-toggle-icon-sun"><i data-lucide="sun"></i></span>
+            <span class="theme-toggle-icon theme-toggle-icon-moon"><i data-lucide="moon"></i></span>
           </span>
         </button>
       </div>
@@ -170,7 +170,14 @@
     </div>
   </div>
 
-  <script src="js/auth.js"></script>
-  <script src="js/students.js"></script>
+  <script src="../js/auth.js"></script>
+  <script src="../js/students.js"></script>
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+    });
+  </script>
 </body>
 </html>

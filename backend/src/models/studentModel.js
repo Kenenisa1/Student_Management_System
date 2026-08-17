@@ -9,6 +9,12 @@
 
 import { pool } from "../config/db.js";
 
+const mapStudentRow = (row) => ({
+    ...row,
+    dept: row.department_name || (row.department_id ? String(row.department_id) : ''),
+    courses: row.course_codes ? row.course_codes.split(', ').filter(Boolean) : []
+});
+
 // =====================================================
 // CREATE STUDENT
 // =====================================================
@@ -23,11 +29,22 @@ const createStudent = async (student) => {
     const values = [
         student.name,
         student.email,
-        student.phone,
-        student.department_id
+        student.phone || null,
+        student.department_id || null
     ];
 
     const [result] = await pool.execute(sql, values);
+    const studentId = result.insertId;
+
+    // Sync courses if provided as course_ids array or course_codes array/string
+    if (student.course_ids && Array.isArray(student.course_ids)) {
+        for (const cid of student.course_ids) {
+            await pool.execute(
+                `INSERT IGNORE INTO student_courses (student_id, course_id) VALUES (?, ?)`,
+                [studentId, cid]
+            );
+        }
+    }
 
     return result;
 };
@@ -39,19 +56,26 @@ const createStudent = async (student) => {
 const getAllStudents = async () => {
     const sql = `
         SELECT
-            id,
-            name,
-            email,
-            phone,
-            department_id,
-            is_deleted
-        FROM students
-        WHERE is_deleted = false
+            s.id,
+            s.name,
+            s.email,
+            s.phone,
+            s.department_id,
+            s.is_deleted,
+            s.created_at,
+            d.name AS department_name,
+            GROUP_CONCAT(c.code ORDER BY c.code SEPARATOR ', ') AS course_codes
+        FROM students s
+        LEFT JOIN departments d ON s.department_id = d.id
+        LEFT JOIN student_courses sc ON s.id = sc.student_id
+        LEFT JOIN courses c ON sc.course_id = c.id
+        WHERE s.is_deleted = false
+        GROUP BY s.id
+        ORDER BY s.id DESC
     `;
 
     const [rows] = await pool.execute(sql);
-
-    return rows;
+    return rows.map(mapStudentRow);
 };
 
 // =====================================================
@@ -61,20 +85,26 @@ const getAllStudents = async () => {
 const getStudentById = async (id) => {
     const sql = `
         SELECT
-            id,
-            name,
-            email,
-            phone,
-            department_id,
-            is_deleted
-        FROM students
-        WHERE id = ?
-        AND is_deleted = false
+            s.id,
+            s.name,
+            s.email,
+            s.phone,
+            s.department_id,
+            s.is_deleted,
+            s.created_at,
+            d.name AS department_name,
+            GROUP_CONCAT(c.code ORDER BY c.code SEPARATOR ', ') AS course_codes
+        FROM students s
+        LEFT JOIN departments d ON s.department_id = d.id
+        LEFT JOIN student_courses sc ON s.id = sc.student_id
+        LEFT JOIN courses c ON sc.course_id = c.id
+        WHERE s.id = ?
+        AND s.is_deleted = false
+        GROUP BY s.id
     `;
 
     const [rows] = await pool.execute(sql, [id]);
-
-    return rows[0];
+    return rows[0] ? mapStudentRow(rows[0]) : null;
 };
 
 // =====================================================
@@ -96,12 +126,23 @@ const updateStudent = async (id, student) => {
     const values = [
         student.name,
         student.email,
-        student.phone,
-        student.department_id,
+        student.phone || null,
+        student.department_id || null,
         id
     ];
 
     const [result] = await pool.execute(sql, values);
+
+    // Sync courses if provided
+    if (student.course_ids && Array.isArray(student.course_ids)) {
+        await pool.execute(`DELETE FROM student_courses WHERE student_id = ?`, [id]);
+        for (const cid of student.course_ids) {
+            await pool.execute(
+                `INSERT IGNORE INTO student_courses (student_id, course_id) VALUES (?, ?)`,
+                [id, cid]
+            );
+        }
+    }
 
     return result;
 };
@@ -148,23 +189,26 @@ const assignCourseToStudent = async (studentId, courseId) => {
 const getStudentsByDepartment = async (departmentId) => {
     const sql = `
         SELECT
-            id,
-            name,
-            email,
-            phone,
-            department_id,
-            is_deleted
-        FROM students
-        WHERE department_id = ?
-        AND is_deleted = false
+            s.id,
+            s.name,
+            s.email,
+            s.phone,
+            s.department_id,
+            s.is_deleted,
+            s.created_at,
+            d.name AS department_name,
+            GROUP_CONCAT(c.code ORDER BY c.code SEPARATOR ', ') AS course_codes
+        FROM students s
+        LEFT JOIN departments d ON s.department_id = d.id
+        LEFT JOIN student_courses sc ON s.id = sc.student_id
+        LEFT JOIN courses c ON sc.course_id = c.id
+        WHERE s.department_id = ?
+        AND s.is_deleted = false
+        GROUP BY s.id
     `;
 
-    const [rows] = await pool.execute(
-        sql,
-        [departmentId]
-    );
-
-    return rows;
+    const [rows] = await pool.execute(sql, [departmentId]);
+    return rows.map(mapStudentRow);
 };
 
 // =====================================================
@@ -196,4 +240,4 @@ export {
     assignCourseToStudent,
     getStudentsByDepartment,
     getActiveStudentsCount
-};
+};

@@ -116,62 +116,30 @@ export const getAllStudents=async(req,res)=>{
  */
 
 export const getStudentById=async(req,res)=>{
-
-
     try{
-
-
-        const student =
-            await studentModel.getStudentById(
-                req.params.id
-            );
-
-
+        const student = await studentModel.getStudentById(req.params.id);
 
         if(!student){
-
             return res.status(404).json({
-
+                success: false,
                 message:"Student not found"
-
             });
-
         }
 
-
-
-        res.json(student);
-
-
-
-    }catch(error){
-
-
-        res.status(500).json({
-
-            message:error.message
-
+        res.json({
+            success: true,
+            data: student
         });
-
+    }catch(error){
+        res.status(500).json({
+            success: false,
+            message:error.message
+        });
     }
-
 };
 
-
-
-
-
-/**
- * UPDATE STUDENT
- * PUT /api/students/:id
- */
-
 export const updateStudent=async(req,res)=>{
-
-
     try{
-
-
         const result = await studentModel.updateStudent(
             req.params.id,
             req.body
@@ -179,80 +147,46 @@ export const updateStudent=async(req,res)=>{
 
         if (result.affectedRows === 0) {
             return res.status(404).json({
+                success: false,
                 message: "Student not found"
             });
         }
 
-
-
         res.json({
-
+            success: true,
             message:"Student updated successfully"
-
         });
-
-
-
     }catch(error){
-
-
         res.status(500).json({
-
+            success: false,
             message:error.message
-
         });
-
-
     }
-
 };
 
-
-
-
-
-/**
- * DELETE STUDENT
- * DELETE /api/students/:id
- */
-
 export const deleteStudent=async(req,res)=>{
-
-
     try{
-
-
         const result = await studentModel.deleteStudent(
             req.params.id
         );
 
         if (result.affectedRows === 0) {
             return res.status(404).json({
+                success: false,
                 message: "Student not found"
             });
         }
 
-
-
         res.json({
-
+            success: true,
             message:"Student deleted successfully"
-
         });
-
-
-
     }catch(error){
-
-
         res.status(500).json({
-
+            success: false,
             message:error.message
-
         });
-
     }
-
 };
 
 /**
