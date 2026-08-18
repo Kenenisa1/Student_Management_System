@@ -10,6 +10,11 @@
  *  - A06 Vulnerable Components    → package.json uses latest secure versions
  *  - A07 Auth Failures            → Rate limiting, JWT expiry, bcrypt
  *  - A09 Security Logging         → loggerMiddleware on all requests
+ *
+ * Architecture patterns applied:
+ *  - Multi-Client Architecture    → /api/v1/ versioned routes (browser, mobile, desktop)
+ *  - Load Balancing ready         → PM2 cluster mode (ecosystem.config.json)
+ *  - Lazy Loading                 → Tab-based JS loading on frontend
  * =====================================================
  */
 
@@ -84,18 +89,47 @@ app.use(logger);
 // ── 6. Input sanitization (XSS defence-in-depth) ─────────────
 app.use(sanitize);
 
-// ── 7. Health-check ───────────────────────────────────────────
+// ── 7. API Version Header (Multi-Client Architecture) ────────
+// Every response carries an X-API-Version header so clients know
+// which version they are talking to. This enables:
+//  - Web browsers, mobile apps and desktop clients to all use the same API
+//  - Future versioning without breaking existing clients
+app.use((req, res, next) => {
+    res.setHeader('X-API-Version', '1.0.0');
+    res.setHeader('X-Powered-By-Worker', process.pid); // shows which PM2 worker handled it
+    next();
+});
+
+// ── 8. Health-check (shows load balancing in action) ──────────
+// When PM2 runs multiple workers, each request may be handled by
+// a different worker process. The worker_pid field proves this.
 app.get('/', (req, res) => {
     res.json({
-        success: true,
-        message: 'JU Student Management API is running.',
-        version: '2.0.0'
+        success:     true,
+        message:     'JU Student Management API is running.',
+        version:     '1.0.0',
+        worker_pid:  process.pid,           // changes per worker → proves load balancing
+        uptime_sec:  Math.floor(process.uptime()),
+        environment: process.env.NODE_ENV || 'development',
+        clients:     ['web-browser', 'mobile-app (future)', 'desktop-app (future)']
     });
 });
 
-// ── 8. API Routes ─────────────────────────────────────────────
+// ── 9. API Routes — versioned for Multi-Client Architecture ───
+// /api/v1/ prefix means:
+//  - Web app uses: http://localhost:5000/api/v1/auth/login
+//  - Mobile app will use the same URL — no code changes on server side
+//  - When v2 is released, v1 still works → no breaking changes
+const v1 = '/api/v1';
+app.use(`${v1}/auth`,        authRoutes);
+app.use(`${v1}/profile`,     profileRoutes);
+app.use(`${v1}/students`,    requireAuth, studentRoutes);
+app.use(`${v1}/departments`, requireAuth, departmentRoutes);
+app.use(`${v1}/courses`,     requireAuth, courseRoutes);
+
+// Backward-compatible aliases (old /api/ routes still work)
 app.use('/api/auth',        authRoutes);
-app.use('/api/profile',     profileRoutes);                                     // requires auth inside
+app.use('/api/profile',     profileRoutes);
 app.use('/api/students',    requireAuth, studentRoutes);
 app.use('/api/departments', requireAuth, departmentRoutes);
 app.use('/api/courses',     requireAuth, courseRoutes);

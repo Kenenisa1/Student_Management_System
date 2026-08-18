@@ -6,7 +6,11 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node src/server.js",
-    "dev": "nodemon src/server.js"
+    "dev": "nodemon src/server.js",
+    "cluster": "pm2 start ecosystem.config.json --env development",
+    "cluster:stop": "pm2 stop sms-api",
+    "cluster:status": "pm2 status",
+    "cluster:logs": "pm2 logs sms-api"
   },
   "keywords": [],
   "author": "",
