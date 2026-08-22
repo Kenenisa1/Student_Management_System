@@ -46,18 +46,32 @@ app.use(helmet({
     contentSecurityPolicy: {
         directives: {
             defaultSrc:     ["'self'"],
-            scriptSrc:      ["'self'", "'unsafe-inline'", 'fonts.googleapis.com'],
+            scriptSrc:      ["'self'", "'unsafe-inline'", 'fonts.googleapis.com', 'unpkg.com'],
             styleSrc:       ["'self'", "'unsafe-inline'", 'fonts.googleapis.com', 'fonts.gstatic.com'],
             fontSrc:        ["'self'", 'fonts.googleapis.com', 'fonts.gstatic.com'],
-            imgSrc:         ["'self'", 'data:'],
-            connectSrc:     ["'self'"],
+            imgSrc:         ["'self'", 'data:', 'blob:'],
+            connectSrc:     ["'self'", "http://localhost:*", "ws://localhost:*"],
             frameSrc:       ["'none'"],
             objectSrc:      ["'none'"],
-            upgradeInsecureRequests: []
-        }
+            upgradeInsecureRequests: [],
+            reportUri:      '/api/v1/csp-report'
+        },
+        reportOnly: false
     },
-    crossOriginEmbedderPolicy: false   // Allow fonts/images from CDN in dev
+    crossOriginEmbedderPolicy: false,   // Allow fonts/images from CDN in dev
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+    hsts: {
+        maxAge: 31536000,
+        includeSubDomains: true,
+        preload: true
+    }
 }));
+
+// Permissions-Policy (not fully supported by Helmet directly yet, often set manually)
+app.use((req, res, next) => {
+    res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+    next();
+});
 
 // ── 2. CORS — whitelist frontend origin only ─────────────────
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:5500,http://127.0.0.1:5500,http://localhost:3000,null').split(',');
@@ -82,7 +96,10 @@ import cookieParser from 'cookie-parser';
 app.use(generalLimiter);
 
 // ── 4. Body parsers ───────────────────────────────────────────
-app.use(express.json({ limit: '10kb' }));          // prevent large payload attacks
+app.use(express.json({ 
+    limit: '10kb',
+    type: ['application/json', 'application/csp-report']
+})); // prevent large payload attacks
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use(cookieParser());
 
@@ -124,6 +141,16 @@ app.get('/', (req, res) => {
 //  - Mobile app will use the same URL — no code changes on server side
 //  - When v2 is released, v1 still works → no breaking changes
 const v1 = '/api/v1';
+
+app.post(`${v1}/csp-report`, (req, res) => {
+    if (req.body) {
+        console.warn('CSP Violation: ', req.body);
+    } else {
+        console.warn('CSP Violation: No data received!');
+    }
+    res.status(204).end();
+});
+
 app.use(`${v1}/auth`,        authRoutes);
 app.use(`${v1}/profile`,     profileRoutes);
 app.use(`${v1}/students`,    requireAuth, studentRoutes);

@@ -90,6 +90,15 @@ export const submitGrade = async (req, res) => {
         if (isNaN(numericGrade) || numericGrade < 0 || numericGrade > 100) {
             return res.status(400).json({ success: false, message: 'Grade must be a number between 0 and 100.' });
         }
+        
+        // ABAC: Verify teacher teaches the course
+        if (role === 'teacher') {
+            const courseModel = await import('../models/courseModel.js');
+            const course = await courseModel.getCourseById(Number(course_id));
+            if (!course || course.instructor_id !== teacherId) {
+                return res.status(403).json({ success: false, message: 'Forbidden: You are not the instructor for this course.' });
+            }
+        }
 
         await userModel.upsertGrade({
             studentId:   Number(student_id),

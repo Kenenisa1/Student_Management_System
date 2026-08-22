@@ -24,7 +24,7 @@ const staffOrAdmin = requireRoles('admin', 'superadmin', 'teacher');
 router.get('/',                   staffOrAdmin, studentController.getAllStudents);
 router.get('/count',              staffOrAdmin, studentController.getStudentsCount);
 router.get('/department/:deptId', staffOrAdmin, studentController.getStudentsByDepartment);
-router.get('/:id',                staffOrAdmin, studentController.getStudentById);
+router.get('/:id',                requireRoles('admin', 'superadmin', 'teacher', 'student'), studentController.getStudentById);
 
 // ── WRITE (admin + superadmin only) ──────────────────────────
 router.post('/',       adminOnly, validateStudent, studentController.createStudent);

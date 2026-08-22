@@ -79,6 +79,35 @@ const getAllStudents = async () => {
 };
 
 // =====================================================
+// GET STUDENTS BY TEACHER
+// =====================================================
+
+const getStudentsByTeacherId = async (teacherId) => {
+    const sql = `
+        SELECT
+            s.id,
+            s.name,
+            s.email,
+            s.phone,
+            s.department_id,
+            s.is_deleted,
+            s.created_at,
+            d.name AS department_name,
+            GROUP_CONCAT(c.code ORDER BY c.code SEPARATOR ', ') AS course_codes
+        FROM students s
+        JOIN student_courses sc ON s.id = sc.student_id
+        JOIN courses c ON sc.course_id = c.id
+        LEFT JOIN departments d ON s.department_id = d.id
+        WHERE s.is_deleted = false AND c.instructor_id = ?
+        GROUP BY s.id
+        ORDER BY s.id DESC
+    `;
+
+    const [rows] = await pool.execute(sql, [teacherId]);
+    return rows.map(mapStudentRow);
+};
+
+// =====================================================
 // GET STUDENT BY ID
 // =====================================================
 
@@ -234,6 +263,7 @@ const getActiveStudentsCount = async () => {
 export {
     createStudent,
     getAllStudents,
+    getStudentsByTeacherId,
     getStudentById,
     updateStudent,
     deleteStudent,

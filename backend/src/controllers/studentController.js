@@ -74,19 +74,18 @@ export const getAllStudents=async(req,res)=>{
 
 
     try{
-
-
-        const students =
-            await studentModel.getAllStudents();
-
-
+        let students;
+        
+        // ABAC: Teachers only see their own students
+        if (req.user.role === 'teacher') {
+            students = await studentModel.getStudentsByTeacherId(req.user.id);
+        } else {
+            students = await studentModel.getAllStudents();
+        }
 
         res.json({
-
             success:true,
-
             data:students
-
         });
 
 
@@ -123,6 +122,26 @@ export const getStudentById=async(req,res)=>{
             return res.status(404).json({
                 success: false,
                 message:"Student not found"
+            });
+        }
+
+        // ABAC: Teachers can only view students enrolled in their courses
+        if (req.user.role === 'teacher') {
+            const myStudents = await studentModel.getStudentsByTeacherId(req.user.id);
+            const isMyStudent = myStudents.some(s => s.id === student.id);
+            if (!isMyStudent) {
+                return res.status(403).json({
+                    success: false,
+                    message: "Forbidden: Student is not enrolled in your courses."
+                });
+            }
+        }
+
+        // Also if a student is trying to access this, they can only view their own
+        if (req.user.role === 'student' && req.user.id !== parseInt(req.params.id, 10)) {
+            return res.status(403).json({
+                success: false,
+                message: "Forbidden: You can only view your own profile."
             });
         }
 

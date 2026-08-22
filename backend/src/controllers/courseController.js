@@ -33,7 +33,21 @@ export const createCourse = async (req, res) => {
 
 export const getAllCourses = async (req, res) => {
     try {
-        const courses = await courseModel.getAllCourses();
+        let courses = await courseModel.getAllCourses();
+
+        // ABAC: Object-level authorization
+        if (req.user.role === 'student') {
+            // Must fetch which courses student is enrolled in, or just let them see all courses?
+            // "Object-level authorization with deny by default" implies strict access.
+            // But if they need to see course catalog, maybe it's ok?
+            // Actually, `userModel.findStudentCoursesWithGrades(req.user.id)` gets their courses.
+            const userModel = await import('../models/userModel.js');
+            const myCourses = await userModel.findStudentCoursesWithGrades(req.user.id);
+            const myCourseIds = new Set(myCourses.map(c => c.id));
+            courses = courses.filter(c => myCourseIds.has(c.id));
+        } else if (req.user.role === 'teacher') {
+            courses = courses.filter(c => c.instructor_id === req.user.id);
+        }
 
         res.json({
             success: true,
@@ -66,6 +80,26 @@ export const getCourseById = async (req, res) => {
                 success: false,
                 message: "Course not found"
             });
+        }
+
+        // ABAC: Object-level authorization
+        if (req.user.role === 'teacher' && course.instructor_id !== req.user.id) {
+            return res.status(403).json({
+                success: false,
+                message: "Forbidden: You do not have access to this course."
+            });
+        }
+        
+        if (req.user.role === 'student') {
+            const userModel = await import('../models/userModel.js');
+            const myCourses = await userModel.findStudentCoursesWithGrades(req.user.id);
+            const isEnrolled = myCourses.some(c => c.id === course.id);
+            if (!isEnrolled) {
+                return res.status(403).json({
+                    success: false,
+                    message: "Forbidden: You are not enrolled in this course."
+                });
+            }
         }
 
         res.json({
