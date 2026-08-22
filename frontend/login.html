@@ -67,6 +67,18 @@
           </div>
           <span class="field-error" id="pass-error"></span>
         </div>
+        </div>
+        
+        <!-- TOTP Step (Hidden initially) -->
+        <div class="field-group" id="totp-group" style="display: none;">
+          <label class="field-label" for="totp">Authenticator Code (2FA)</label>
+          <div class="field-wrap">
+            <svg class="field-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <input type="text" id="totp" class="field-input" placeholder="000000" autocomplete="one-time-code" maxlength="6" />
+          </div>
+          <span class="field-error" id="totp-error"></span>
+        </div>
+
         <label class="check-label"><input type="checkbox" id="remember-me" /><span class="check-box"></span>Remember me for 30 days</label>
         <button type="submit" class="btn-submit" id="submit-btn">
           <span class="btn-text">Sign in to Dashboard</span>

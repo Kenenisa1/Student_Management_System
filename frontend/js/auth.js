@@ -61,7 +61,8 @@
      */
     async function apiFetch(url, options = {}) {
         const headers = Object.assign(getAuthHeaders(), options.headers || {});
-        const res = await fetch(url, { ...options, headers });
+        // Add credentials: 'include' so secure cookies are sent with every request
+        const res = await fetch(url, { credentials: 'include', ...options, headers });
         if (res.status === 401) {
             logout();
             throw new Error('Session expired. Redirecting to login.');
@@ -83,9 +84,18 @@
 
     /**
      * Clear ONLY auth-related keys (not theme/preferences),
-     * then redirect to login.
+     * call backend to revoke token, then redirect to login.
      */
-    function logout() {
+    async function logout() {
+        try {
+            await fetch('http://localhost:5000/api/v1/auth/logout', { 
+                method: 'POST', 
+                credentials: 'include' 
+            });
+        } catch (e) {
+            console.error('Logout error:', e);
+        }
+
         const authKeys = ['educore_user', 'educore_token', 'isAuthenticated'];
         authKeys.forEach(k => {
             localStorage.removeItem(k);

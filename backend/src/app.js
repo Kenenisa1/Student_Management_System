@@ -76,12 +76,15 @@ app.use(cors({
     optionsSuccessStatus: 200
 }));
 
+import cookieParser from 'cookie-parser';
+
 // ── 3. Global rate limiter ────────────────────────────────────
 app.use(generalLimiter);
 
 // ── 4. Body parsers ───────────────────────────────────────────
 app.use(express.json({ limit: '10kb' }));          // prevent large payload attacks
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+app.use(cookieParser());
 
 // ── 5. Request logger ─────────────────────────────────────────
 app.use(logger);

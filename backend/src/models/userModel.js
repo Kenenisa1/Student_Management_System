@@ -47,7 +47,7 @@ const findUserByEmail = async (role, email) => {
     if (role === 'student') {
         const [rows] = await pool.execute(
             `SELECT id, name, email, password_hash, department_id, created_at,
-                    'student' AS role
+                    'student' AS role, login_attempts, locked_until, password_changed_at, totp_enabled, totp_secret
              FROM students
              WHERE email = ? AND is_deleted = FALSE`,
             [normalizedEmail]
@@ -57,7 +57,8 @@ const findUserByEmail = async (role, email) => {
 
     if (role === 'staff' || role === 'any') {
         const [rows] = await pool.execute(
-            `SELECT id, name, email, password_hash, department_id, role, created_at
+            `SELECT id, name, email, password_hash, department_id, role, created_at,
+                    login_attempts, locked_until, password_changed_at, totp_enabled, totp_secret
              FROM staff
              WHERE email = ? AND is_deleted = FALSE`,
             [normalizedEmail]
@@ -175,6 +176,53 @@ const comparePassword = async (plain, hash) => {
     return bcrypt.compare(plain, hash);
 };
 
+// ─── Security: Account Lockout ───────────────────────────────────────────────
+const incrementLoginAttempts = async (table, id) => {
+    // table must be 'students' or 'staff'
+    const maxAttempts = 5;
+    const lockMinutes = 15;
+    
+    await pool.execute(
+        `UPDATE ${table} 
+         SET login_attempts = login_attempts + 1,
+             locked_until = IF(login_attempts + 1 >= ?, DATE_ADD(NOW(), INTERVAL ? MINUTE), locked_until)
+         WHERE id = ?`,
+        [maxAttempts, lockMinutes, id]
+    );
+};
+
+const resetLoginAttempts = async (table, id) => {
+    await pool.execute(
+        `UPDATE ${table} SET login_attempts = 0, locked_until = NULL WHERE id = ?`,
+        [id]
+    );
+};
+
+// ─── TOTP (2FA) ─────────────────────────────────────────────────────────────
+const enableTotp = async (table, id, secret) => {
+    await pool.execute(
+        `UPDATE ${table} SET totp_secret = ?, totp_enabled = TRUE WHERE id = ?`,
+        [secret, id]
+    );
+};
+
+// ─── Refresh Tokens ─────────────────────────────────────────────────────────
+const saveRefreshToken = async (userId, userType, tokenHash, expiresAt) => {
+    await pool.execute(
+        `INSERT INTO refresh_tokens (user_id, user_type, token_hash, expires_at) VALUES (?, ?, ?, ?)`,
+        [userId, userType, tokenHash, expiresAt]
+    );
+};
+
+const findRefreshToken = async (tokenHash) => {
+    const [rows] = await pool.execute(`SELECT * FROM refresh_tokens WHERE token_hash = ?`, [tokenHash]);
+    return rows[0] || null;
+};
+
+const revokeRefreshToken = async (tokenHash) => {
+    await pool.execute(`DELETE FROM refresh_tokens WHERE token_hash = ?`, [tokenHash]);
+};
+
 export {
     registerUser,
     findUserByEmail,
@@ -183,5 +231,11 @@ export {
     findTeacherCoursesWithStudents,
     updateStudentProfile,
     upsertGrade,
-    comparePassword
+    comparePassword,
+    incrementLoginAttempts,
+    resetLoginAttempts,
+    enableTotp,
+    saveRefreshToken,
+    findRefreshToken,
+    revokeRefreshToken
 };

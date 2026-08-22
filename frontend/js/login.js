@@ -87,16 +87,32 @@ form.addEventListener('submit', async (e) => {
     submitBtn.disabled = true;
 
     try {
-        const res  = await fetch(`${API_BASE}/api/auth/login`, {
+        const body = {
+            email:    emailInput.value.trim().toLowerCase(),
+            password: passInput.value
+        };
+
+        const totpInput = document.getElementById('totp');
+        if (totpInput && totpInput.value) {
+            body.totpToken = totpInput.value;
+        }
+
+        const res  = await fetch(`${API_BASE}/api/v1/auth/login`, {
             method:  'POST',
+            credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({
-                email:    emailInput.value.trim().toLowerCase(),
-                password: passInput.value
-            })
+            body:    JSON.stringify(body)
         });
 
         const data = await res.json();
+
+        if (data.requireTotp) {
+            document.getElementById('totp-group').style.display = 'block';
+            document.getElementById('totp').focus();
+            submitBtn.classList.remove('loading');
+            submitBtn.disabled = false;
+            return;
+        }
 
         if (!res.ok) {
             throw new Error(data.message || 'Login failed. Please check your credentials.');
