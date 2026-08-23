@@ -1,5 +1,6 @@
 import jwt       from 'jsonwebtoken';
 import crypto    from 'crypto';
+import validator from 'validator';
 import * as userModel from '../models/userModel.js';
 import { addEmailJob } from '../config/queues.js';
 import {
@@ -115,13 +116,13 @@ export const register = async (req, res, next) => {
         const allowedRoles = ['student', 'teacher'];
         if (!allowedRoles.includes(role)) throw new ValidationError('Role must be student or teacher.');
 
-        const { table } = resolveUserTable(role);
+        const { table, type } = resolveUserTable(role);
         const existing  = await userModel.findUserByEmail(role, email);
         if (existing) throw new ConflictError('An account with this email already exists.');
 
-        const safeName = name.trim();
+        const safeName = validator.escape(name.trim());
         await userModel.registerUser(role, { name: safeName, email, password });
-        const newUser = await userModel.findUserByEmail(table, email);
+        const newUser = await userModel.findUserByEmail(type, email);
         const token   = signToken(newUser);
 
         // Fire-and-forget welcome email via message queue

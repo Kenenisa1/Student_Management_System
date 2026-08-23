@@ -11,6 +11,7 @@ export const generalLimiter = rateLimit({
     }),
     windowMs: 15 * 60 * 1000,
     max: 100,
+    passOnStoreError: true, // If Redis is down, allow request instead of failing
     standardHeaders: true,
     legacyHeaders: false,
     message: {
@@ -29,6 +30,7 @@ export const authLimiter = rateLimit({
     }),
     windowMs: 15 * 60 * 1000,
     max: 10,
+    passOnStoreError: true,
     standardHeaders: true,
     legacyHeaders: false,
     skipSuccessfulRequests: false,
@@ -58,6 +60,7 @@ export const roleBasedLimiter = rateLimit({
         return req.user ? req.user.id.toString() : req.ip;
     },
     validate: { keyGeneratorIpFallback: false },
+    passOnStoreError: true,
     standardHeaders: true,
     legacyHeaders: false,
     message: {

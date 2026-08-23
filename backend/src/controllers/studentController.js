@@ -65,11 +65,12 @@ export const getAllStudents = async (req, res, next) => {
 /** GET /api/students/:id — Get one (ABAC checked) */
 export const getStudentById = async (req, res, next) => {
     try {
+        assertStudentOwnership(req.user, req.params.id);
+
         const student = await studentModel.getStudentById(req.params.id);
         if (!student) throw new NotFoundError('Student');
 
         await assertTeacherStudentAccess(req.user, student);
-        assertStudentOwnership(req.user, req.params.id);
 
         return res.json({ success: true, data: student });
     } catch (err) { next(err); }

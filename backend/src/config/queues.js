@@ -1,8 +1,8 @@
 import { Queue, Worker } from 'bullmq';
-import redisClient from '../config/redis.js';
+import { queueConnection } from '../config/redis.js';
 
 // Setup connection
-const connection = redisClient;
+const connection = queueConnection;
 
 // Define Queues
 export const emailQueue = new Queue('emailQueue', { connection });
