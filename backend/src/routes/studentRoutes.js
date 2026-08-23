@@ -14,6 +14,7 @@ import express from 'express';
 import * as studentController from '../controllers/studentController.js';
 import { validateStudent }    from '../middleware/validationMiddleware.js';
 import { requireRoles }       from '../middleware/authMiddleware.js';
+import { cacheMiddleware }    from '../middleware/cacheMiddleware.js';
 
 const router = express.Router();
 
@@ -21,9 +22,9 @@ const adminOnly    = requireRoles('admin', 'superadmin');
 const staffOrAdmin = requireRoles('admin', 'superadmin', 'teacher');
 
 // ── READ (admin + teacher) ────────────────────────────────────
-router.get('/',                   staffOrAdmin, studentController.getAllStudents);
-router.get('/count',              staffOrAdmin, studentController.getStudentsCount);
-router.get('/department/:deptId', staffOrAdmin, studentController.getStudentsByDepartment);
+router.get('/',                   staffOrAdmin, cacheMiddleware(60), studentController.getAllStudents);
+router.get('/count',              staffOrAdmin, cacheMiddleware(300), studentController.getStudentsCount);
+router.get('/department/:deptId', staffOrAdmin, cacheMiddleware(60), studentController.getStudentsByDepartment);
 router.get('/:id',                requireRoles('admin', 'superadmin', 'teacher', 'student'), studentController.getStudentById);
 
 // ── WRITE (admin + superadmin only) ──────────────────────────

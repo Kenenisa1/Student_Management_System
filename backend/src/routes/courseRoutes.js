@@ -1,6 +1,7 @@
 import express from "express";
 import * as courseController from "../controllers/courseController.js";
 import { requireRoles } from "../middleware/authMiddleware.js";
+import { cacheMiddleware } from "../middleware/cacheMiddleware.js";
 
 const router = express.Router();
 
@@ -12,7 +13,7 @@ const allAuthenticated = requireRoles('admin', 'superadmin', 'teacher', 'student
 router.post("/", adminOnly, courseController.createCourse);
 
 // GET ALL
-router.get("/", allAuthenticated, courseController.getAllCourses);
+router.get("/", allAuthenticated, cacheMiddleware(120), courseController.getAllCourses);
 
 // GET ONE
 router.get("/:id", allAuthenticated, courseController.getCourseById);

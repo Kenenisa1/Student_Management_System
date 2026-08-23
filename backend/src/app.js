@@ -142,6 +142,13 @@ app.get('/', (req, res) => {
 //  - When v2 is released, v1 still works → no breaking changes
 const v1 = '/api/v1';
 
+import { roleBasedLimiter } from './middleware/rateLimitMiddleware.js';
+
+// ── Health Check endpoints ────────────────────────────────────
+app.get('/health', (req, res) => res.status(200).json({ status: 'UP' }));
+app.get('/ready', (req, res) => res.status(200).json({ status: 'READY' }));
+app.get('/live', (req, res) => res.status(200).json({ status: 'ALIVE' }));
+
 app.post(`${v1}/csp-report`, (req, res) => {
     if (req.body) {
         console.warn('CSP Violation: ', req.body);
@@ -152,17 +159,17 @@ app.post(`${v1}/csp-report`, (req, res) => {
 });
 
 app.use(`${v1}/auth`,        authRoutes);
-app.use(`${v1}/profile`,     profileRoutes);
-app.use(`${v1}/students`,    requireAuth, studentRoutes);
-app.use(`${v1}/departments`, requireAuth, departmentRoutes);
-app.use(`${v1}/courses`,     requireAuth, courseRoutes);
+app.use(`${v1}/profile`,     requireAuth, roleBasedLimiter, profileRoutes);
+app.use(`${v1}/students`,    requireAuth, roleBasedLimiter, studentRoutes);
+app.use(`${v1}/departments`, requireAuth, roleBasedLimiter, departmentRoutes);
+app.use(`${v1}/courses`,     requireAuth, roleBasedLimiter, courseRoutes);
 
 // Backward-compatible aliases (old /api/ routes still work)
 app.use('/api/auth',        authRoutes);
-app.use('/api/profile',     profileRoutes);
-app.use('/api/students',    requireAuth, studentRoutes);
-app.use('/api/departments', requireAuth, departmentRoutes);
-app.use('/api/courses',     requireAuth, courseRoutes);
+app.use('/api/profile',     requireAuth, roleBasedLimiter, profileRoutes);
+app.use('/api/students',    requireAuth, roleBasedLimiter, studentRoutes);
+app.use('/api/departments', requireAuth, roleBasedLimiter, departmentRoutes);
+app.use('/api/courses',     requireAuth, roleBasedLimiter, courseRoutes);
 
 // ── 9. 404 handler ────────────────────────────────────────────
 app.use(notFound);

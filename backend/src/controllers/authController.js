@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import validator from 'validator';
 import * as userModel from '../models/userModel.js';
+import { addEmailJob } from '../config/queues.js';
 
 const JWT_SECRET  = process.env.JWT_SECRET;
 const JWT_EXPIRES = process.env.JWT_EXPIRES_IN || '7d';
@@ -78,6 +79,9 @@ export const register = async (req, res) => {
         await userModel.registerUser(role, { name: safeName, email, password });
         const newUser = await userModel.findUserByEmail(table, email);
         const token   = signToken(newUser);
+
+        // Async Email Notification using Message Queue
+        addEmailJob(email, 'Welcome to JU SMS', `Hello ${safeName}, your account has been successfully created.`).catch(err => console.error('Failed to queue email:', err));
 
         return res.status(201).json({
             success: true,
