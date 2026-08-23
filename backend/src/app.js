@@ -3,18 +3,26 @@
  * app.js — Express Application Configuration
  * =====================================================
  * Security layers applied (OWASP Top 10 mitigations):
- *  - A01 Broken Access Control    → requireAuth + requireRoles on all routes
+ *  - A01 Broken Access Control    → requireAuth + requireRoles + ABAC on all routes
  *  - A02 Cryptographic Failures   → bcrypt (12 rounds), JWT HS256
  *  - A03 Injection                → Parameterized queries, sanitizeMiddleware
  *  - A05 Security Misconfiguration→ Helmet headers, CORS whitelist, no stack traces
  *  - A06 Vulnerable Components    → package.json uses latest secure versions
- *  - A07 Auth Failures            → Rate limiting, JWT expiry, bcrypt
- *  - A09 Security Logging         → loggerMiddleware on all requests
+ *  - A07 Auth Failures            → Rate limiting, JWT expiry, bcrypt, account lockout
+ *  - A09 Security Logging         → loggerMiddleware on all requests, CSP violation reporting
  *
  * Architecture patterns applied:
+ *  - API Gateway Pattern          → Auth, rate limiting, request routing, logging all in one layer
  *  - Multi-Client Architecture    → /api/v1/ versioned routes (browser, mobile, desktop)
  *  - Load Balancing ready         → PM2 cluster mode (ecosystem.config.json)
  *  - Lazy Loading                 → Tab-based JS loading on frontend
+ *  - Caching (Redis)              → Student & course list responses cached 60-120 seconds
+ *  - Message Queue (BullMQ/Redis) → Async email notifications & batch report jobs
+ *  - Circuit Breaker (Opossum)    → External service calls protected against cascading failures
+ *  - Retry + Exponential Backoff  → axios-retry for transient failures
+ *  - Health Checks                → /health, /ready, /live endpoints
+ *  - Graceful Shutdown            → SIGTERM/SIGINT handlers in server.js
+ *  - Distributed Rate Limiting    → Redis-backed role-based limits (Admin:1000, Teacher:500, Student:100/min)
  * =====================================================
  */
 
@@ -145,9 +153,50 @@ const v1 = '/api/v1';
 import { roleBasedLimiter } from './middleware/rateLimitMiddleware.js';
 
 // ── Health Check endpoints ────────────────────────────────────
-app.get('/health', (req, res) => res.status(200).json({ status: 'UP' }));
-app.get('/ready', (req, res) => res.status(200).json({ status: 'READY' }));
-app.get('/live', (req, res) => res.status(200).json({ status: 'ALIVE' }));
+// API Gateway: expose health, readiness, and liveness probes
+import { pool } from './config/db.js';
+import redisClient from './config/redis.js';
+
+app.get('/health', async (req, res) => {
+    const health = {
+        status: 'UP',
+        uptime: Math.floor(process.uptime()),
+        timestamp: new Date().toISOString(),
+        services: {}
+    };
+
+    // Check MySQL
+    try {
+        await pool.query('SELECT 1');
+        health.services.database = 'UP';
+    } catch {
+        health.services.database = 'DOWN';
+        health.status = 'DEGRADED';
+    }
+
+    // Check Redis
+    try {
+        await redisClient.ping();
+        health.services.redis = 'UP';
+    } catch {
+        health.services.redis = 'DOWN';
+        health.status = 'DEGRADED';
+    }
+
+    const httpStatus = health.status === 'UP' ? 200 : 503;
+    return res.status(httpStatus).json(health);
+});
+
+app.get('/ready', async (req, res) => {
+    try {
+        await pool.query('SELECT 1');
+        return res.status(200).json({ status: 'READY' });
+    } catch {
+        return res.status(503).json({ status: 'NOT_READY', reason: 'Database unavailable' });
+    }
+});
+
+app.get('/live', (req, res) => res.status(200).json({ status: 'ALIVE', pid: process.pid }));
 
 app.post(`${v1}/csp-report`, (req, res) => {
     if (req.body) {
