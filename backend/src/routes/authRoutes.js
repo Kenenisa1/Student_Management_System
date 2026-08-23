@@ -2,14 +2,15 @@ import express from 'express';
 import { register, login, getMe, refreshToken, logout, setupTotp, verifyTotp } from '../controllers/authController.js';
 import { requireAuth } from '../middleware/authMiddleware.js';
 import { authLimiter } from '../middleware/rateLimitMiddleware.js';
+import { validate, schemas } from '../middleware/validationMiddleware.js';
 
 const router = express.Router();
 
-// POST /api/auth/register  — strict rate-limited
-router.post('/register', authLimiter, register);
+// POST /api/auth/register  — Joi validation + strict rate limit
+router.post('/register', authLimiter, validate(schemas.register), register);
 
-// POST /api/auth/login  — strict rate-limited
-router.post('/login', authLimiter, login);
+// POST /api/auth/login  — Joi validation + strict rate limit
+router.post('/login', authLimiter, validate(schemas.login), login);
 
 // GET /api/auth/me  — requires valid JWT token
 router.get('/me', requireAuth, getMe);

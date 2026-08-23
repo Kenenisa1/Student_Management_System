@@ -1,116 +1,88 @@
-import * as userModel from '../models/userModel.js';
+/**
+ * =====================================================
+ * profileController.js
+ * =====================================================
+ * Clean Code refactor:
+ *  - All handlers use async/await + next(err)
+ *  - Validation moved to Joi schema in route layer
+ *  - ABAC course ownership check extracted to helper
+ * =====================================================
+ */
 
-// ─── GET /api/profile/me ──────────────────────────────────────────────────────
-// Returns authenticated user's full profile + courses/grades
-export const getMyProfile = async (req, res) => {
-    try {
-        const { id, role } = req.user;
+import * as userModel  from '../models/userModel.js';
+import { NotFoundError, ForbiddenError } from '../utils/errors.js';
 
-        const user = await userModel.findUserById(role, id);
-        if (!user) {
-            return res.status(404).json({ success: false, message: 'User not found.' });
-        }
-
-        let courses = [];
-        if (role === 'student') {
-            courses = await userModel.findStudentCoursesWithGrades(id);
-        } else if (role === 'teacher') {
-            courses = await userModel.findTeacherCoursesWithStudents(id);
-        }
-
-        return res.json({
-            success: true,
-            profile: {
-                id:            user.id,
-                name:          user.name,
-                email:         user.email,
-                phone:         user.phone || null,
-                role:          user.role,
-                department_id: user.department_id,
-                created_at:    user.created_at
-            },
-            courses
-        });
-    } catch (error) {
-        console.error('[profileController.getMyProfile]', error.message);
-        return res.status(500).json({ success: false, message: 'Server error.' });
-    }
+// ─── Helper: fetch courses based on role ──────────────────────
+const fetchUserCourses = async (role, id) => {
+    if (role === 'student') return userModel.findStudentCoursesWithGrades(id);
+    if (role === 'teacher') return userModel.findTeacherCoursesWithStudents(id);
+    return [];
 };
 
-// ─── PUT /api/profile/me ──────────────────────────────────────────────────────
-// Updates authenticated student's profile
-export const updateMyProfile = async (req, res) => {
+// ─── Helper: format user profile payload ─────────────────────
+const formatProfile = (user) => ({
+    id:            user.id,
+    name:          user.name,
+    email:         user.email,
+    phone:         user.phone || null,
+    role:          user.role,
+    department_id: user.department_id,
+    created_at:    user.created_at,
+});
+
+// ─── GET /api/profile/me ──────────────────────────────────────
+export const getMyProfile = async (req, res, next) => {
+    try {
+        const { id, role } = req.user;
+        const user = await userModel.findUserById(role, id);
+        if (!user) throw new NotFoundError('User');
+
+        const courses = await fetchUserCourses(role, id);
+        return res.json({ success: true, profile: formatProfile(user), courses });
+    } catch (err) { next(err); }
+};
+
+// ─── PUT /api/profile/me ──────────────────────────────────────
+// Only students update their own profile here; body validated by Joi
+export const updateMyProfile = async (req, res, next) => {
     try {
         const { id, role } = req.user;
         if (role !== 'student') {
-            return res.status(403).json({ success: false, message: 'Only students can update their profile here.' });
+            throw new ForbiddenError('Only students can update their profile here.');
         }
 
         const { name, phone } = req.body;
-        if (!name || !String(name).trim()) {
-            return res.status(400).json({ success: false, message: 'Name is required.' });
-        }
-
-        await userModel.updateStudentProfile(id, { name: String(name).trim(), phone });
-
+        await userModel.updateStudentProfile(id, { name: name.trim(), phone });
         const updated = await userModel.findUserById('student', id);
-        return res.json({
-            success: true,
-            message: 'Profile updated successfully.',
-            profile: {
-                id:            updated.id,
-                name:          updated.name,
-                email:         updated.email,
-                phone:         updated.phone || null,
-                role:          updated.role,
-                department_id: updated.department_id
-            }
-        });
-    } catch (error) {
-        console.error('[profileController.updateMyProfile]', error.message);
-        return res.status(500).json({ success: false, message: 'Server error.' });
-    }
+
+        return res.json({ success: true, message: 'Profile updated successfully.', profile: formatProfile(updated) });
+    } catch (err) { next(err); }
 };
 
-// ─── POST /api/profile/grades ─────────────────────────────────────────────────
-// Teacher submits or updates a grade for a student in their course
-export const submitGrade = async (req, res) => {
+// ─── POST /api/profile/grades ─────────────────────────────────
+// Body validated by Joi schema.grade; ABAC ensures teacher owns the course
+export const submitGrade = async (req, res, next) => {
     try {
         const { role, id: teacherId } = req.user;
-        if (role !== 'teacher' && role !== 'admin' && role !== 'superadmin') {
-            return res.status(403).json({ success: false, message: 'Only teachers can submit grades.' });
-        }
-
         const { student_id, course_id, grade, letter_grade } = req.body;
 
-        if (!student_id || !course_id || grade === undefined || grade === null) {
-            return res.status(400).json({ success: false, message: 'student_id, course_id, and grade are required.' });
-        }
-        const numericGrade = parseFloat(grade);
-        if (isNaN(numericGrade) || numericGrade < 0 || numericGrade > 100) {
-            return res.status(400).json({ success: false, message: 'Grade must be a number between 0 and 100.' });
-        }
-        
-        // ABAC: Verify teacher teaches the course
+        // ABAC: teacher must teach the course
         if (role === 'teacher') {
-            const courseModel = await import('../models/courseModel.js');
-            const course = await courseModel.getCourseById(Number(course_id));
+            const { getCourseById } = await import('../models/courseModel.js');
+            const course = await getCourseById(Number(course_id));
             if (!course || course.instructor_id !== teacherId) {
-                return res.status(403).json({ success: false, message: 'Forbidden: You are not the instructor for this course.' });
+                throw new ForbiddenError('You are not the instructor for this course.');
             }
         }
 
         await userModel.upsertGrade({
             studentId:   Number(student_id),
             courseId:    Number(course_id),
-            grade:       numericGrade,
+            grade:       parseFloat(grade),
             letterGrade: letter_grade || null,
-            gradedBy:    teacherId
+            gradedBy:    teacherId,
         });
 
-        return res.json({ success: true, message: 'Grade saved successfully.' });
-    } catch (error) {
-        console.error('[profileController.submitGrade]', error.message);
-        return res.status(500).json({ success: false, message: 'Server error.' });
-    }
+        return res.status(201).json({ success: true, message: 'Grade submitted successfully.' });
+    } catch (err) { next(err); }
 };

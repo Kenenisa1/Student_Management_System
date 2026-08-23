@@ -57,6 +57,7 @@ export const roleBasedLimiter = rateLimit({
     keyGenerator: (req) => {
         return req.user ? req.user.id.toString() : req.ip;
     },
+    validate: { keyGeneratorIpFallback: false },
     standardHeaders: true,
     legacyHeaders: false,
     message: {

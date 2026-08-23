@@ -1,255 +1,120 @@
 /**
  * =====================================================
  * studentController.js
- * -----------------------------------------------------
- * Purpose:
- * Handle HTTP requests and responses.
+ * =====================================================
+ * Clean Code refactor:
+ *  - All handlers use async/await + next(err) pattern
+ *  - Errors thrown via custom error classes (AppError)
+ *  - DRY: shared ABAC checks extracted into helpers
+ *  - No direct res.status(500) scattered throughout
  * =====================================================
  */
 
+import * as studentModel from '../models/studentModel.js';
+import { NotFoundError, ForbiddenError, ConflictError, ValidationError } from '../utils/errors.js';
 
-import * as studentModel from "../models/studentModel.js";
+// ─────────────────────────────────────────────────────────────────────────────
+// PRIVATE ABAC HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
 
-
-
-
-
-/**
- * CREATE STUDENT
- * POST /api/students
- */
-
-export const createStudent = async(req,res)=>{
-
-
-    try{
-
-
-        const student=req.body;
-
-
-
-        const result =
-            await studentModel.createStudent(student);
-
-
-        res.status(201).json({
-
-            success:true,
-
-            message:"Student created successfully",
-
-            id:result.insertId
-
-        });
-
-
-
-    }catch(error){
-
-
-        res.status(500).json({
-
-            success:false,
-
-            message:error.message
-
-        });
-
-
-    }
-
+/** Returns the set of student IDs a teacher is allowed to see */
+const getTeacherStudentIds = async (teacherId) => {
+    const students = await studentModel.getStudentsByTeacherId(teacherId);
+    return new Set(students.map(s => s.id));
 };
 
-
-
-
-
-/**
- * GET ALL STUDENTS
- * GET /api/students
- */
-
-export const getAllStudents=async(req,res)=>{
-
-
-    try{
-        let students;
-        
-        // ABAC: Teachers only see their own students
-        if (req.user.role === 'teacher') {
-            students = await studentModel.getStudentsByTeacherId(req.user.id);
-        } else {
-            students = await studentModel.getAllStudents();
-        }
-
-        res.json({
-            success:true,
-            data:students
-        });
-
-
-
-    }catch(error){
-
-
-        res.status(500).json({
-
-            success:false,
-
-            message:error.message
-
-        });
-
+/** Throw 403 if a student is accessing another student's record */
+const assertStudentOwnership = (requestingUser, targetId) => {
+    if (requestingUser.role === 'student' && requestingUser.id !== parseInt(targetId, 10)) {
+        throw new ForbiddenError('You can only view your own profile.');
     }
-
 };
 
+/** Throw 403 if a teacher is accessing a student not in their courses */
+const assertTeacherStudentAccess = async (teacher, student) => {
+    if (teacher.role !== 'teacher') return;
+    const allowedIds = await getTeacherStudentIds(teacher.id);
+    if (!allowedIds.has(student.id)) {
+        throw new ForbiddenError('Student is not enrolled in your courses.');
+    }
+};
 
+// ─────────────────────────────────────────────────────────────────────────────
+// CONTROLLERS
+// ─────────────────────────────────────────────────────────────────────────────
 
+/** POST /api/students — Create student */
+export const createStudent = async (req, res, next) => {
+    try {
+        const result = await studentModel.createStudent(req.body);
+        return res.status(201).json({ success: true, message: 'Student created successfully.', id: result.insertId });
+    } catch (err) { next(err); }
+};
 
+/** GET /api/students — List all (ABAC filtered) */
+export const getAllStudents = async (req, res, next) => {
+    try {
+        const students = req.user.role === 'teacher'
+            ? await studentModel.getStudentsByTeacherId(req.user.id)
+            : await studentModel.getAllStudents();
 
-/**
- * GET STUDENT BY ID
- * GET /api/students/:id
- */
+        return res.json({ success: true, data: students });
+    } catch (err) { next(err); }
+};
 
-export const getStudentById=async(req,res)=>{
-    try{
+/** GET /api/students/:id — Get one (ABAC checked) */
+export const getStudentById = async (req, res, next) => {
+    try {
         const student = await studentModel.getStudentById(req.params.id);
+        if (!student) throw new NotFoundError('Student');
 
-        if(!student){
-            return res.status(404).json({
-                success: false,
-                message:"Student not found"
-            });
-        }
+        await assertTeacherStudentAccess(req.user, student);
+        assertStudentOwnership(req.user, req.params.id);
 
-        // ABAC: Teachers can only view students enrolled in their courses
-        if (req.user.role === 'teacher') {
-            const myStudents = await studentModel.getStudentsByTeacherId(req.user.id);
-            const isMyStudent = myStudents.some(s => s.id === student.id);
-            if (!isMyStudent) {
-                return res.status(403).json({
-                    success: false,
-                    message: "Forbidden: Student is not enrolled in your courses."
-                });
-            }
-        }
-
-        // Also if a student is trying to access this, they can only view their own
-        if (req.user.role === 'student' && req.user.id !== parseInt(req.params.id, 10)) {
-            return res.status(403).json({
-                success: false,
-                message: "Forbidden: You can only view your own profile."
-            });
-        }
-
-        res.json({
-            success: true,
-            data: student
-        });
-    }catch(error){
-        res.status(500).json({
-            success: false,
-            message:error.message
-        });
-    }
+        return res.json({ success: true, data: student });
+    } catch (err) { next(err); }
 };
 
-export const updateStudent=async(req,res)=>{
-    try{
-        const result = await studentModel.updateStudent(
-            req.params.id,
-            req.body
-        );
-
-        if (result.affectedRows === 0) {
-            return res.status(404).json({
-                success: false,
-                message: "Student not found"
-            });
-        }
-
-        res.json({
-            success: true,
-            message:"Student updated successfully"
-        });
-    }catch(error){
-        res.status(500).json({
-            success: false,
-            message:error.message
-        });
-    }
+/** PUT /api/students/:id — Update student */
+export const updateStudent = async (req, res, next) => {
+    try {
+        const result = await studentModel.updateStudent(req.params.id, req.body);
+        if (result.affectedRows === 0) throw new NotFoundError('Student');
+        return res.json({ success: true, message: 'Student updated successfully.' });
+    } catch (err) { next(err); }
 };
 
-export const deleteStudent=async(req,res)=>{
-    try{
-        const result = await studentModel.deleteStudent(
-            req.params.id
-        );
-
-        if (result.affectedRows === 0) {
-            return res.status(404).json({
-                success: false,
-                message: "Student not found"
-            });
-        }
-
-        res.json({
-            success: true,
-            message:"Student deleted successfully"
-        });
-    }catch(error){
-        res.status(500).json({
-            success: false,
-            message:error.message
-        });
-    }
+/** DELETE /api/students/:id — Soft delete student */
+export const deleteStudent = async (req, res, next) => {
+    try {
+        const result = await studentModel.deleteStudent(req.params.id);
+        if (result.affectedRows === 0) throw new NotFoundError('Student');
+        return res.json({ success: true, message: 'Student deleted successfully.' });
+    } catch (err) { next(err); }
 };
 
-/**
- * ASSIGN COURSE TO STUDENT
- * POST /api/students/:id/courses
- */
-export const assignCourse = async (req, res) => {
+/** POST /api/students/:id/courses — Assign course */
+export const assignCourse = async (req, res, next) => {
     try {
         const { course_id } = req.body;
-        if (!course_id) {
-            return res.status(400).json({ message: "Course ID is required" });
-        }
+        if (!course_id) throw new ValidationError('course_id is required.');
         await studentModel.assignCourseToStudent(req.params.id, course_id);
-        res.status(201).json({ message: "Course assigned successfully" });
-    } catch (error) {
-        if (error.code === 'ER_DUP_ENTRY') {
-            return res.status(400).json({ message: "Student is already assigned to this course" });
-        }
-        res.status(500).json({ message: error.message });
-    }
+        return res.status(201).json({ success: true, message: 'Course assigned successfully.' });
+    } catch (err) { next(err); }
 };
 
-/**
- * GET STUDENTS BY DEPARTMENT
- * GET /api/students/department/:deptId
- */
-export const getStudentsByDepartment = async (req, res) => {
+/** GET /api/students/department/:deptId — Students by department */
+export const getStudentsByDepartment = async (req, res, next) => {
     try {
         const students = await studentModel.getStudentsByDepartment(req.params.deptId);
-        res.json({ success: true, data: students });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
+        return res.json({ success: true, data: students });
+    } catch (err) { next(err); }
 };
 
-/**
- * GET ACTIVE STUDENTS COUNT
- * GET /api/students/count
- */
-export const getStudentsCount = async (req, res) => {
+/** GET /api/students/count — Active students count */
+export const getStudentsCount = async (req, res, next) => {
     try {
         const count = await studentModel.getActiveStudentsCount();
-        res.json({ success: true, count: count });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
+        return res.json({ success: true, count });
+    } catch (err) { next(err); }
 };

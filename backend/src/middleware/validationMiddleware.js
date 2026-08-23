@@ -1,78 +1,104 @@
-import validator from 'validator';
+import Joi from 'joi';
+import { ValidationError } from '../utils/errors.js';
 
 /**
- * validationMiddleware.js
- * ─────────────────────────────────────────────────────────────────────
- * Input validation for student CRUD endpoints.
- * Uses parameterized queries (via mysql2) so this is an extra layer —
- * not a substitute for prepared statements.
+ * =====================================================
+ * validationSchemas.js — Joi Validation Schemas
+ * =====================================================
+ * DRY: All input validation schemas live here.
+ * Use `validate(schema)` middleware to apply them.
+ * =====================================================
  */
 
-// Patterns that look like SQL injection attempts
-const SQL_INJECTION_PATTERN = /('|--|;|\/\*|\*\/|xp_|UNION\s+SELECT|DROP\s+TABLE|INSERT\s+INTO|DELETE\s+FROM|UPDATE\s+.*SET)/i;
+// ── Reusable field definitions ─────────────────────────────────
+const fields = {
+    name:         Joi.string().trim().min(2).max(100).required(),
+    email:        Joi.string().trim().email().required(),
+    phone:        Joi.string().trim().min(7).max(20).optional().allow('', null),
+    department_id:Joi.number().integer().positive().optional().allow(null),
+    password:     Joi.string().min(12)
+                      .pattern(/[A-Z]/, 'uppercase')
+                      .pattern(/[a-z]/, 'lowercase')
+                      .pattern(/[0-9]/, 'digit')
+                      .pattern(/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/, 'special')
+                      .required()
+                      .messages({
+                          'string.min':     'Password must be at least 12 characters.',
+                          'string.pattern.name': 'Password must contain at least one {#name} character.'
+                      }),
+    role:         Joi.string().valid('student', 'teacher').required(),
+    totpToken:    Joi.string().length(6).pattern(/^\d+$/).optional(),
+};
 
-export const validateStudent = (req, res, next) => {
-    const { name, email, phone, department_id } = req.body;
+// ── Schemas ────────────────────────────────────────────────────
+export const schemas = {
 
-    // Required fields
-    if (!name || !String(name).trim()) {
-        return res.status(400).json({
-            success: false,
-            message: "Validation Error: 'name' is required."
+    register: Joi.object({
+        name:          fields.name,
+        email:         fields.email,
+        password:      fields.password,
+        role:          fields.role,
+        department_id: fields.department_id,
+        phone:         fields.phone,
+    }),
+
+    login: Joi.object({
+        email:      fields.email,
+        password:   Joi.string().required().messages({ 'any.required': 'Password is required.' }),
+        totpToken:  fields.totpToken,
+    }),
+
+    student: Joi.object({
+        name:          fields.name,
+        email:         fields.email,
+        phone:         fields.phone,
+        department_id: fields.department_id,
+        course_ids:    Joi.array().items(Joi.number().integer().positive()).optional(),
+    }),
+
+    course: Joi.object({
+        name:          Joi.string().trim().min(2).max(150).required(),
+        code:          Joi.string().trim().min(2).max(20).required(),
+        description:   Joi.string().trim().max(500).optional().allow('', null),
+        credits:       Joi.number().integer().min(1).max(10).optional(),
+        department_id: fields.department_id,
+        instructor_id: Joi.number().integer().positive().optional().allow(null),
+    }),
+
+    grade: Joi.object({
+        student_id:   Joi.number().integer().positive().required(),
+        course_id:    Joi.number().integer().positive().required(),
+        grade:        Joi.number().min(0).max(100).required(),
+        letter_grade: Joi.string().max(3).optional().allow('', null),
+    }),
+
+    profileUpdate: Joi.object({
+        name:  Joi.string().trim().min(2).max(100).optional(),
+        phone: fields.phone,
+    }),
+};
+
+/**
+ * Factory: returns a middleware that validates req.body
+ * against the provided Joi schema.
+ *
+ * @param {Joi.Schema} schema
+ * @param {'body'|'params'|'query'} [source='body']
+ */
+export const validate = (schema, source = 'body') => {
+    return (req, res, next) => {
+        const { error, value } = schema.validate(req[source], {
+            abortEarly:  false,  // return ALL errors at once
+            stripUnknown: true,  // remove unexpected fields
         });
-    }
-    if (!email || !String(email).trim()) {
-        return res.status(400).json({
-            success: false,
-            message: "Validation Error: 'email' is required."
-        });
-    }
 
-    // Email format
-    if (!validator.isEmail(email)) {
-        return res.status(400).json({
-            success: false,
-            message: "Validation Error: 'email' must be a valid email address."
-        });
-    }
-
-    // Name length
-    if (String(name).trim().length < 2 || String(name).trim().length > 100) {
-        return res.status(400).json({
-            success: false,
-            message: "Validation Error: 'name' must be between 2 and 100 characters."
-        });
-    }
-
-    // Phone format (optional)
-    if (phone && !validator.isMobilePhone(String(phone), 'any', { strictMode: false })) {
-        return res.status(400).json({
-            success: false,
-            message: "Validation Error: 'phone' must be a valid phone number."
-        });
-    }
-
-    // Department ID must be a positive integer if provided
-    if (department_id !== undefined && department_id !== null && department_id !== '') {
-        const deptNum = Number(department_id);
-        if (!Number.isInteger(deptNum) || deptNum < 1) {
-            return res.status(400).json({
-                success: false,
-                message: "Validation Error: 'department_id' must be a positive integer."
-            });
+        if (error) {
+            const messages = error.details.map(d => d.message.replace(/"/g, "'")).join('; ');
+            return next(new ValidationError(messages));
         }
-    }
 
-    // Injection pattern check (defence-in-depth — parameterized queries are the primary protection)
-    const fieldsToCheck = [name, email, phone].filter(Boolean).map(String);
-    for (const field of fieldsToCheck) {
-        if (SQL_INJECTION_PATTERN.test(field)) {
-            return res.status(400).json({
-                success: false,
-                message: 'Validation Error: Input contains disallowed characters or patterns.'
-            });
-        }
-    }
-
-    next();
+        // Overwrite with sanitised/coerced value
+        req[source] = value;
+        next();
+    };
 };
