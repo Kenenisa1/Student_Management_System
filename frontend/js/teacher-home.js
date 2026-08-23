@@ -2,7 +2,7 @@
  * js/teacher-home.js — JU Teacher Portal
  */
 
-const API_BASE = 'http://localhost:5000';
+// API_BASE is sourced from EduAuth (auth.js loaded before this script)
 
 document.addEventListener('DOMContentLoaded', async () => {
     EduAuth.guard(['teacher']);
@@ -25,7 +25,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // ── Fetch profile + courses from API ──────────────────────────
     try {
-        const res  = await EduAuth.apiFetch(`${API_BASE}/api/profile/me`);
+        const res  = await EduAuth.apiFetch('/profile/me');
         const data = await res.json();
         if (!data.success) throw new Error(data.message);
 
@@ -204,7 +204,7 @@ async function submitGrade(courseId, studentId, rowId) {
     }
 
     try {
-        const res  = await EduAuth.apiFetch(`${API_BASE}/api/profile/grades`, {
+        const res  = await EduAuth.apiFetch('/profile/grades', {
             method: 'POST',
             body: JSON.stringify({
                 student_id:   studentId,

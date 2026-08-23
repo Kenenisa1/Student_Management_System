@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Setup 2-Factor Authentication (2FA) — JU Student Management</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%234f46e5'/%3E%3Cpath d='M16 8L6 13l10 5 10-5z' fill='white'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/index.css" />
+  <link rel="stylesheet" href="css/login.css" />
+  <script src="js/theme-toggle.js"></script>
+  <style>
+    .qr-container {
+      background: white;
+      padding: 16px;
+      border-radius: 12px;
+      display: inline-block;
+      margin: 16px 0;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .qr-container img {
+      width: 180px;
+      height: 180px;
+      display: block;
+    }
+    .secret-code {
+      font-family: monospace;
+      background: rgba(99, 102, 241, 0.1);
+      color: var(--primary);
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      letter-spacing: 2px;
+      font-weight: 700;
+      word-break: break-all;
+    }
+  </style>
+</head>
+<body>
+  <!-- HEADER -->
+  <header class="site-header" id="site-header">
+    <div class="container header-inner">
+      <a href="main-page/index.html" class="logo" aria-label="Home">
+        <div class="logo-icon" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>
+          </svg>
+        </div>
+        <span class="logo-text">JU Student Management</span>
+      </a>
+      <div class="header-actions" id="header-actions">
+        <button id="theme-toggle" class="theme-toggle" title="Toggle theme" aria-label="Switch theme" type="button">
+          <span class="theme-toggle-slider">
+            <span class="theme-toggle-icon theme-toggle-icon-sun"><i data-lucide="sun"></i></span>
+            <span class="theme-toggle-icon theme-toggle-icon-moon"><i data-lucide="moon"></i></span>
+          </span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="login-bg" aria-hidden="true"><div class="orb orb-1"></div><div class="orb orb-2"></div><div class="bg-grid"></div></div>
+
+  <main class="login-main">
+    <div class="login-card" style="max-width: 480px; text-align: center;">
+      <div class="login-logo" style="justify-content: center;">
+        <div class="logo-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+        <span>Security Center</span>
+      </div>
+      
+      <h1 class="login-title">Two-Factor Authentication</h1>
+      <p class="login-sub">Scan the QR code with Google Authenticator or Microsoft Authenticator.</p>
+
+      <div id="setup-loading" style="padding: 30px;">
+        <div class="btn-spinner" style="display:inline-block; width: 32px; height: 32px; border-width: 3px;"></div>
+        <p style="margin-top: 12px; color: var(--text-secondary);">Generating secure 2FA keys...</p>
+      </div>
+
+      <div id="setup-content" style="display: none;">
+        <div class="qr-container">
+          <img id="qr-image" src="" alt="2FA QR Code" />
+        </div>
+
+        <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 6px;">Can't scan? Enter key manually:</p>
+        <div class="secret-code" id="secret-key">----</div>
+
+        <div id="form-error" class="form-error" role="alert" aria-live="polite" style="margin-top: 16px;" hidden></div>
+        <div id="form-success" class="form-success" role="status" style="margin-top: 16px; background: rgba(34, 197, 94, 0.1); color: #16a34a; padding: 10px; border-radius: 8px;" hidden></div>
+
+        <form id="verify-form" style="margin-top: 20px;" novalidate>
+          <div class="field-group" style="text-align: left;">
+            <label class="field-label" for="verify-code">6-digit Verification Code</label>
+            <div class="field-wrap">
+              <input type="text" id="verify-code" class="field-input" placeholder="123456" maxlength="6" autocomplete="one-time-code" style="text-align: center; font-size: 1.2rem; letter-spacing: 4px; font-weight: 700;" required />
+            </div>
+            <span class="field-error" id="code-error"></span>
+          </div>
+
+          <button type="submit" class="btn-submit" id="submit-btn" style="margin-top: 10px;">
+            <span class="btn-text">Verify and Enable 2FA</span>
+            <span class="btn-spinner" aria-hidden="true"></span>
+          </button>
+        </form>
+
+        <div style="margin-top: 20px;">
+          <a href="javascript:history.back()" style="color: var(--text-secondary); font-size: 0.875rem; text-decoration: none;">← Return to Dashboard</a>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="js/auth.js"></script>
+  <script src="js/totp-setup.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+    });
+  </script>
+</body>
+</html>

@@ -18,7 +18,7 @@ console.log("STUDENTS.JS LOADED");
 // API
 // ============================================================
 
-const API_URL = 'http://localhost:5000/api/students';
+const API_URL = `${EduAuth.API_BASE}/students`;
 
 // ============================================================
 // AUTH
@@ -77,7 +77,7 @@ let loadedDepartments = [];
 
 async function loadDepartmentsOptions() {
     try {
-        const res = await fetch('http://localhost:5000/api/departments', { headers: EduAuth.getAuthHeaders() });
+        const res = await EduAuth.apiFetch('/departments');
         if (!res.ok) return;
         const result = await res.json();
         if (result.success && Array.isArray(result.data)) {

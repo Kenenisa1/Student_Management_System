@@ -24,7 +24,7 @@ EduAuth.initSidebar();
 // API
 // ============================================================
 
-const API_URL = 'http://localhost:5000/api/departments';
+const API_URL = `${EduAuth.API_BASE}/departments`;
 
 // ============================================================
 // DATA

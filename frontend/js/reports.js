@@ -21,9 +21,9 @@ let courses = [];
 async function loadReportsData() {
   try {
     const [resS, resD, resC] = await Promise.all([
-      fetch('http://localhost:5000/api/students', { headers: EduAuth.getAuthHeaders() }).catch(() => null),
-      fetch('http://localhost:5000/api/departments', { headers: EduAuth.getAuthHeaders() }).catch(() => null),
-      fetch('http://localhost:5000/api/courses', { headers: EduAuth.getAuthHeaders() }).catch(() => null)
+      EduAuth.apiFetch('/students').catch(() => null),
+      EduAuth.apiFetch('/departments').catch(() => null),
+      EduAuth.apiFetch('/courses').catch(() => null)
     ]);
 
     if (resS && resS.ok) {

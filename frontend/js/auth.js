@@ -1,11 +1,12 @@
 /**
- * js/auth.js — JU Student Management — Shared Auth Utility  v2.0
+ * js/auth.js — JU Student Management — Shared Auth Utility v2.5 (Enterprise)
  * ─────────────────────────────────────────────────────────────────────
  * Load on every protected page BEFORE other scripts:
  *   <script src="../js/auth.js"></script>   (from admin/ or any sub-dir)
  *   <script src="js/auth.js"></script>      (from frontend root)
  *
  * Public API (window.EduAuth):
+ *   EduAuth.API_BASE              — centralized API endpoint base
  *   EduAuth.guard(allowedRoles?)  — redirect to login if not authenticated
  *   EduAuth.logout()              — clear session and go to login
  *   EduAuth.getUser()             — stored user object or null
@@ -13,12 +14,21 @@
  *   EduAuth.getAuthHeaders()      — { Authorization: 'Bearer <token>' } object
  *   EduAuth.initTopbar()          — populate user chip + wire logout
  *   EduAuth.initSidebar()         — wire hamburger / overlay
- *   EduAuth.apiFetch(url, opts)   — fetch with auth header pre-attached
+ *   EduAuth.apiFetch(url, opts)   — fetch with auth header, cookies, & auto-token-refresh
  */
 
 'use strict';
 
 (function () {
+
+    // ── Centralized API Base ─────────────────────────────────────────
+    const isLocalCustomPort = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const isUnderProxy = window.location.port === '80' || window.location.port === '' || window.location.port === '443';
+    
+    // When served via Nginx (port 80), use relative '/api/v1'. Otherwise fallback to port 5000 backend.
+    const API_BASE = isUnderProxy && !isLocalCustomPort
+        ? '/api/v1'
+        : `${window.location.protocol}//${window.location.hostname}:5000/api/v1`;
 
     // ── Helpers ──────────────────────────────────────────────────────
 
@@ -44,10 +54,7 @@
         );
     }
 
-    /**
-     * Return headers object with Authorization header pre-filled.
-     * This was missing before and caused ReferenceError on every page.
-     */
+    /** Return headers object with Authorization header pre-filled. */
     function getAuthHeaders() {
         const token = getToken();
         const headers = { 'Content-Type': 'application/json' };
@@ -55,24 +62,96 @@
         return headers;
     }
 
+    /** Normalize relative paths into absolute API URLs using API_BASE */
+    function resolveUrl(url) {
+        if (url.startsWith('http://') || url.startsWith('https://')) {
+            return url;
+        }
+        // Normalize /api/ or /api/v1/ prefixes
+        if (url.startsWith('/api/v1/')) {
+            return `${API_BASE}${url.replace('/api/v1', '')}`;
+        }
+        if (url.startsWith('/api/')) {
+            return `${API_BASE}${url.replace('/api', '')}`;
+        }
+        if (url.startsWith('/')) {
+            return `${API_BASE}${url}`;
+        }
+        return `${API_BASE}/${url}`;
+    }
+
+    /** Attempt to refresh access token using the HttpOnly refresh token cookie */
+    let isRefreshing = false;
+    let refreshSubscribers = [];
+
+    function subscribeTokenRefresh(cb) {
+        refreshSubscribers.push(cb);
+    }
+
+    function onRefreshed(token) {
+        refreshSubscribers.forEach(cb => cb(token));
+        refreshSubscribers = [];
+    }
+
+    async function tryRefreshToken() {
+        try {
+            const res = await fetch(`${API_BASE}/auth/refresh`, {
+                method: 'POST',
+                credentials: 'include'
+            });
+            if (!res.ok) return null;
+            const data = await res.json();
+            if (data.token) {
+                const store = localStorage.getItem('educore_token') ? localStorage : sessionStorage;
+                store.setItem('educore_token', data.token);
+                return data.token;
+            }
+        } catch (e) {
+            console.error('[EduAuth] Refresh token failed:', e);
+        }
+        return null;
+    }
+
     /**
-     * Wrapper around fetch() that automatically attaches the auth header.
-     * Usage: const data = await EduAuth.apiFetch('/api/students');
+     * Wrapper around fetch() that automatically attaches auth headers, credentials,
+     * and performs automatic token rotation on 401 Unauthorized responses.
      */
     async function apiFetch(url, options = {}) {
+        const fullUrl = resolveUrl(url);
         const headers = Object.assign(getAuthHeaders(), options.headers || {});
-        // Add credentials: 'include' so secure cookies are sent with every request
-        const res = await fetch(url, { credentials: 'include', ...options, headers });
-        if (res.status === 401) {
-            logout();
-            throw new Error('Session expired. Redirecting to login.');
+        
+        let res = await fetch(fullUrl, { credentials: 'include', ...options, headers });
+
+        // Token expired or invalid — attempt refresh rotation
+        if (res.status === 401 && !fullUrl.includes('/auth/login') && !fullUrl.includes('/auth/refresh')) {
+            if (!isRefreshing) {
+                isRefreshing = true;
+                const newToken = await tryRefreshToken();
+                isRefreshing = false;
+                if (newToken) {
+                    onRefreshed(newToken);
+                    headers['Authorization'] = `Bearer ${newToken}`;
+                    return fetch(fullUrl, { credentials: 'include', ...options, headers });
+                } else {
+                    logout();
+                    throw new Error('Session expired. Redirecting to login.');
+                }
+            } else {
+                // Wait for ongoing refresh
+                return new Promise((resolve) => {
+                    subscribeTokenRefresh((token) => {
+                        headers['Authorization'] = `Bearer ${token}`;
+                        resolve(fetch(fullUrl, { credentials: 'include', ...options, headers }));
+                    });
+                });
+            }
         }
+
         return res;
     }
 
     // ── Path helpers ─────────────────────────────────────────────────
 
-    /** Compute the relative path to login.html from the current page. */
     function getLoginUrl() {
         const path = window.location.pathname;
         if (path.includes('/admin/')) return '../login.html';
@@ -82,13 +161,9 @@
 
     // ── Logout ───────────────────────────────────────────────────────
 
-    /**
-     * Clear ONLY auth-related keys (not theme/preferences),
-     * call backend to revoke token, then redirect to login.
-     */
     async function logout() {
         try {
-            await fetch('http://localhost:5000/api/v1/auth/logout', { 
+            await fetch(`${API_BASE}/auth/logout`, { 
                 method: 'POST', 
                 credentials: 'include' 
             });
@@ -106,17 +181,6 @@
 
     // ── Auth Guard ───────────────────────────────────────────────────
 
-    /**
-     * Call at the TOP of every protected page script.
-     * @param {string[]} [allowedRoles]  — optional array of permitted roles.
-     *   If omitted, any authenticated user passes.
-     *   If provided, users with wrong roles are redirected appropriately.
-     *
-     * Role redirect logic:
-     *   student      → student-dashboard.html  (or ../student-dashboard.html from admin/)
-     *   teacher      → teacher-home.html
-     *   admin/superadmin → admin/dashboard.html
-     */
     function guard(allowedRoles) {
         const token  = getToken();
         const flagOk = localStorage.getItem('isAuthenticated') === 'true';
@@ -132,19 +196,15 @@
             return;
         }
 
-        // Role-specific redirect when the current page is off-limits
         if (allowedRoles && !allowedRoles.includes(user.role)) {
             _redirectToRoleHome(user.role);
             return;
         }
 
-        // Role CSS classes for conditional styling
         document.documentElement.classList.add('role-' + user.role);
-        // Lift visibility:hidden gate (used on guarded pages)
         document.documentElement.classList.add('auth-ready');
     }
 
-    /** Send the user to their default home page based on role. */
     function _redirectToRoleHome(role) {
         const path = window.location.pathname;
         const isInAdmin   = path.includes('/admin/');
@@ -156,7 +216,6 @@
         } else if (role === 'teacher') {
             window.location.replace(prefix + 'teacher-home.html');
         } else {
-            // admin / superadmin
             window.location.replace(isInAdmin ? 'dashboard.html' : 'admin/dashboard.html');
         }
     }
@@ -227,11 +286,12 @@
     // ── Public API ───────────────────────────────────────────────────
 
     window.EduAuth = {
+        API_BASE,
         guard,
         logout,
         getUser,
         getToken,
-        getAuthHeaders,   // ← was missing, caused ReferenceError
+        getAuthHeaders,
         apiFetch,
         initTopbar,
         initSidebar
@@ -239,8 +299,6 @@
 
     // ── Site-header auto-init ─────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', function () {
-
-        // Mobile hamburger for landing nav
         const hamburgerBtn = document.getElementById('landing-hamburger-btn');
         const navLinks     = document.getElementById('nav-links');
         if (hamburgerBtn && navLinks) {
@@ -252,7 +310,6 @@
             document.addEventListener('click', e => { const hdr = document.getElementById('site-header'); if (hdr && !hdr.contains(e.target)) closeMenu(); });
             document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
 
-            // Inject mobile logout link if logged in
             if (getToken() && !navLinks.querySelector('.nav-link--mobile-logout')) {
                 const a = document.createElement('a');
                 a.href = '#'; a.className = 'nav-link nav-link--mobile-logout';
@@ -262,7 +319,6 @@
             }
         }
 
-        // Inject "Log Out" button into header-actions when logged in
         const headerActions = document.getElementById('header-actions');
         if (headerActions && getToken() && !headerActions.querySelector('.btn-logout')) {
             const btn = document.createElement('button');
@@ -272,7 +328,6 @@
             headerActions.appendChild(btn);
         }
 
-        // Scroll shadow on header
         const siteHeader = document.getElementById('site-header');
         if (siteHeader) {
             window.addEventListener('scroll', () => {

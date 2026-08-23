@@ -12,7 +12,7 @@
  * ─────────────────────────────────────────────────────────────
  */
 
-const API_BASE = 'http://localhost:5000';
+// API_BASE is sourced from EduAuth (auth.js loaded before this script)
 
 // ── Lazy loading cache ────────────────────────────────────────
 // Tracks which tabs have already been loaded
@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (!name) return;
 
         try {
-            const res  = await EduAuth.apiFetch(`${API_BASE}/api/profile/me`, {
+            const res  = await EduAuth.apiFetch('/profile/me', {
                 method:  'PUT',
                 body:    JSON.stringify({ name, phone })
             });
@@ -96,7 +96,7 @@ async function loadTabData(tab) {
     // Fetch profile + courses if not yet cached
     if (!cachedProfile || !cachedCourses) {
         try {
-            const res  = await EduAuth.apiFetch(`${API_BASE}/api/profile/me`);
+            const res  = await EduAuth.apiFetch('/profile/me');
             const data = await res.json();
             if (!data.success) throw new Error(data.message);
             cachedProfile = data.profile;

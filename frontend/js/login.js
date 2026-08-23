@@ -1,5 +1,5 @@
 /**
- * js/login.js — JU Student Management Login v2.0
+ * js/login.js — JU Student Management Login v2.5 (Enterprise)
  * ─────────────────────────────────────────────────────────────────────
  * Role-based redirect after successful login:
  *   student      → student-dashboard.html
@@ -8,7 +8,9 @@
  *   superadmin   → admin/dashboard.html
  */
 
-const API_BASE = 'http://localhost:5000';
+'use strict';
+
+const API_BASE = window.EduAuth ? window.EduAuth.API_BASE : 'http://localhost:5000/api/v1';
 
 // ── Auto-redirect if already logged in ───────────────────────
 (function checkAlreadyLoggedIn() {
@@ -36,33 +38,41 @@ function redirectByRole(role) {
 }
 
 // ── DOM refs ──────────────────────────────────────────────────
-const form      = document.getElementById('login-form');
+const form       = document.getElementById('login-form');
 const emailInput = document.getElementById('email');
 const passInput  = document.getElementById('password');
 const submitBtn  = document.getElementById('submit-btn');
 const formError  = document.getElementById('form-error');
 const togglePw   = document.getElementById('toggle-pw');
+const totpGroup  = document.getElementById('totp-group');
+const totpInput  = document.getElementById('totp');
 
 // ── Password visibility toggle ────────────────────────────────
-togglePw.addEventListener('click', () => {
-    const show = passInput.type === 'password';
-    passInput.type = show ? 'text' : 'password';
-    document.getElementById('eye-show').style.display = show ? 'none' : '';
-    document.getElementById('eye-hide').style.display = show ? '' : 'none';
-    togglePw.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
-});
+if (togglePw) {
+    togglePw.addEventListener('click', () => {
+        const show = passInput.type === 'password';
+        passInput.type = show ? 'text' : 'password';
+        const showIcon = document.getElementById('eye-show');
+        const hideIcon = document.getElementById('eye-hide');
+        if (showIcon) showIcon.style.display = show ? 'none' : '';
+        if (hideIcon) hideIcon.style.display = show ? '' : 'none';
+        togglePw.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+    });
+}
 
 // ── Inline validation helpers ─────────────────────────────────
 function setFieldError(input, errorId, msg) {
     const el = document.getElementById(errorId);
     if (el) el.textContent = msg;
-    input.classList.toggle('is-error', !!msg);
+    if (input) input.classList.toggle('is-error', !!msg);
 }
+
 function validateEmail(v) {
     if (!v.trim()) return 'Email is required.';
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) return 'Enter a valid email address.';
     return '';
 }
+
 function validatePassword(v) {
     if (!v) return 'Password is required.';
     return '';
@@ -72,6 +82,14 @@ emailInput.addEventListener('blur',  () => setFieldError(emailInput, 'email-erro
 passInput.addEventListener('blur',   () => setFieldError(passInput,  'pass-error',  validatePassword(passInput.value)));
 emailInput.addEventListener('input', () => { emailInput.classList.remove('is-error'); document.getElementById('email-error').textContent = ''; });
 passInput.addEventListener('input',  () => { passInput.classList.remove('is-error');  document.getElementById('pass-error').textContent  = ''; });
+
+if (totpInput) {
+    totpInput.addEventListener('input', () => {
+        totpInput.classList.remove('is-error');
+        const err = document.getElementById('totp-error');
+        if (err) err.textContent = '';
+    });
+}
 
 // ── Form submit ───────────────────────────────────────────────
 form.addEventListener('submit', async (e) => {
@@ -83,6 +101,13 @@ form.addEventListener('submit', async (e) => {
     if (eErr) { setFieldError(emailInput, 'email-error', eErr); return; }
     if (pErr) { setFieldError(passInput,  'pass-error',  pErr); return; }
 
+    if (totpGroup && totpGroup.style.display !== 'none') {
+        if (!totpInput || !totpInput.value.trim() || totpInput.value.trim().length !== 6) {
+            setFieldError(totpInput, 'totp-error', 'Please enter your 6-digit authenticator code.');
+            return;
+        }
+    }
+
     submitBtn.classList.add('loading');
     submitBtn.disabled = true;
 
@@ -92,23 +117,30 @@ form.addEventListener('submit', async (e) => {
             password: passInput.value
         };
 
-        const totpInput = document.getElementById('totp');
-        if (totpInput && totpInput.value) {
-            body.totpToken = totpInput.value;
+        if (totpInput && totpInput.value.trim()) {
+            body.totpToken = totpInput.value.trim();
         }
 
-        const res  = await fetch(`${API_BASE}/api/v1/auth/login`, {
-            method:  'POST',
-            credentials: 'include',
+        const res = await fetch(`${API_BASE}/auth/login`, {
+            method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify(body)
+            credentials: 'include',
+            body: JSON.stringify(body)
         });
 
         const data = await res.json();
 
+        // Check if 2FA is required
         if (data.requireTotp) {
-            document.getElementById('totp-group').style.display = 'block';
-            document.getElementById('totp').focus();
+            if (totpGroup) {
+                totpGroup.style.display = 'block';
+                if (totpInput) totpInput.focus();
+            }
+            formError.textContent = '🔒 Two-Factor Authentication required. Enter the 6-digit code from your authenticator app.';
+            formError.style.background = 'rgba(59, 130, 246, 0.1)';
+            formError.style.color = '#3b82f6';
+            formError.style.border = '1px solid rgba(59, 130, 246, 0.3)';
+            formError.hidden = false;
             submitBtn.classList.remove('loading');
             submitBtn.disabled = false;
             return;
@@ -118,22 +150,29 @@ form.addEventListener('submit', async (e) => {
             throw new Error(data.message || 'Login failed. Please check your credentials.');
         }
 
-        // Store session in the chosen storage
-        const store = document.getElementById('remember-me').checked ? localStorage : sessionStorage;
+        const rememberMe = document.getElementById('remember-me');
+        const store = rememberMe && rememberMe.checked ? localStorage : sessionStorage;
 
-        // Clear other storage to avoid stale data
-        ['educore_user', 'educore_token'].forEach(k => {
-            (store === localStorage ? sessionStorage : localStorage).removeItem(k);
-        });
+        // Clear out opposing storage to avoid sync issues
+        if (store === localStorage) {
+            sessionStorage.removeItem('educore_user');
+            sessionStorage.removeItem('educore_token');
+        } else {
+            localStorage.removeItem('educore_user');
+            localStorage.removeItem('educore_token');
+        }
 
-        store.setItem('educore_user',  JSON.stringify(data.user));
+        store.setItem('educore_user', JSON.stringify(data.user));
         store.setItem('educore_token', data.token);
-        localStorage.setItem('isAuthenticated', 'true');  // flag always in localStorage
+        localStorage.setItem('isAuthenticated', 'true');
 
         redirectByRole(data.user.role);
 
     } catch (err) {
         formError.textContent = err.message;
+        formError.style.background = '';
+        formError.style.color = '';
+        formError.style.border = '';
         formError.hidden = false;
         submitBtn.classList.remove('loading');
         submitBtn.disabled = false;
