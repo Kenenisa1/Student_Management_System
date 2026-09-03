@@ -61,8 +61,9 @@ document.addEventListener('keydown', (e) => {
 });
 
 // ── Animated stat counters ────────────────────────────────────
-function animateCounter(el) {
-  const target   = parseInt(el.dataset.target, 10);
+function animateCounter(el, overrideTarget) {
+  const target   = overrideTarget !== undefined ? Number(overrideTarget) : parseInt(el.dataset.target, 10);
+  if (isNaN(target)) return;
   const duration = 1800;
   const start    = performance.now();
 
@@ -76,6 +77,92 @@ function animateCounter(el) {
   requestAnimationFrame(step);
 }
 
+// ── Live Homepage Database Status Loader ──────────────────────
+async function loadHomePageDBStatus() {
+  try {
+    const [resS, resD, resC] = await Promise.all([
+      fetch('http://localhost:5000/api/students').catch(() => null),
+      fetch('http://localhost:5000/api/departments').catch(() => null),
+      fetch('http://localhost:5000/api/courses').catch(() => null)
+    ]);
+
+    let students = [];
+    let departments = [];
+    let courses = [];
+
+    if (resS && resS.ok) {
+      const dataS = await resS.json();
+      if (dataS.success) students = (dataS.data || []).filter(s => !s.is_deleted);
+    }
+    if (resD && resD.ok) {
+      const dataD = await resD.json();
+      if (dataD.success) departments = dataD.data || [];
+    }
+    if (resC && resC.ok) {
+      const dataC = await resC.json();
+      if (dataC.success) courses = dataC.data || [];
+    }
+
+    const sCount = students.length;
+    const dCount = departments.length;
+    const cCount = courses.length;
+
+    // Update Hero elements
+    const hStudents = document.getElementById('hp-hero-students');
+    const hDepts = document.getElementById('hp-hero-depts');
+    const hCourses = document.getElementById('hp-hero-courses');
+    const proofStudents = document.getElementById('hp-proof-students');
+
+    if (hStudents) animateCounter(hStudents, sCount);
+    if (hDepts) animateCounter(hDepts, dCount);
+    if (hCourses) animateCounter(hCourses, cCount);
+    if (proofStudents) proofStudents.textContent = `${sCount.toLocaleString()}`;
+
+    // Update Hero Live Dashboard Bars
+    const heroBars = document.getElementById('hp-hero-bars');
+    if (heroBars) {
+      heroBars.innerHTML = '';
+      const deptColors = ['#4f46e5', '#7c3aed', '#0891b2', '#059669', '#d97706', '#dc2626'];
+      const maxStudents = Math.max(...departments.map(d => Number(d.student_count || d.students) || 0), 1);
+
+      if (departments.length === 0) {
+        heroBars.innerHTML = '<div class="hc-bar-row"><span>No Data</span><div class="hc-bar"><div style="width:0%"></div></div><span>0%</span></div>';
+      } else {
+        departments.slice(0, 3).forEach((d, i) => {
+          const stCount = Number(d.student_count || d.students) || 0;
+          const pct = Math.round((stCount / maxStudents) * 100);
+          const color = deptColors[i % deptColors.length];
+          const row = document.createElement('div');
+          row.className = 'hc-bar-row';
+          row.innerHTML = `<span>${d.name}</span><div class="hc-bar"><div style="width:${pct}%;background:${color}"></div></div><span>${pct}%</span>`;
+          heroBars.appendChild(row);
+        });
+      }
+    }
+
+    // Update Ticker data targets
+    const tickerS = document.getElementById('ticker-students');
+    const tickerC = document.getElementById('ticker-courses');
+    const tickerD = document.getElementById('ticker-depts');
+
+    if (tickerS) { tickerS.dataset.target = sCount; animateCounter(tickerS); }
+    if (tickerC) { tickerC.dataset.target = cCount; animateCounter(tickerC); }
+    if (tickerD) { tickerD.dataset.target = dCount; animateCounter(tickerD); }
+
+    // Update About section graphics
+    const aboutS = document.getElementById('about-students');
+    const aboutC = document.getElementById('about-courses');
+    if (aboutS) aboutS.textContent = sCount.toLocaleString();
+    if (aboutC) aboutC.textContent = cCount.toLocaleString();
+
+  } catch (error) {
+    console.error('Error loading homepage DB status:', error);
+  }
+}
+
+// Trigger DB load on startup
+loadHomePageDBStatus();
+
 // Trigger when stats section enters viewport
 const statSection = document.querySelector('.stats-ticker');
 let statsAnimated = false;
@@ -83,7 +170,7 @@ let statsAnimated = false;
 const statsObserver = new IntersectionObserver(entries => {
   if (entries[0].isIntersecting && !statsAnimated) {
     statsAnimated = true;
-    document.querySelectorAll('[data-target]').forEach(animateCounter);
+    document.querySelectorAll('[data-target]').forEach(el => animateCounter(el));
     statsObserver.disconnect();
   }
 }, { threshold: 0.4 });
@@ -115,3 +202,4 @@ document.querySelectorAll('a[href^="#"]').forEach(link => {
     target.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
 });
+

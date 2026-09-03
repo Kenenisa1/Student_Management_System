@@ -2,23 +2,25 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-  <title>Dashboard — JU Student Management</title>
+  <title>Admin Dashboard — JU Student Management</title>
+  <meta name="description" content="Admin overview: students, departments, courses, and recent activity." />
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%234f46e5'/%3E%3Cpath d='M16 8L6 13l10 5 10-5z' fill='white'/%3E%3C/svg%3E"/>
   <link rel="preconnect" href="https://fonts.googleapis.com"/><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="css/index.css"/>
-  <link rel="stylesheet" href="css/dashboard.css"/>
-  <link rel="stylesheet" href="css/animations.css"/>
-  <link rel="stylesheet" href="css/auth.css"/>
+  <link rel="stylesheet" href="../css/index.css"/>
+  <link rel="stylesheet" href="../css/dashboard.css"/>
+  <link rel="stylesheet" href="../css/animations.css"/>
+  <link rel="stylesheet" href="../css/auth.css"/>
   <style>html:not(.auth-ready) body { visibility: hidden; }</style>
-  <script src="js/theme-toggle.js"></script>
+  <script src="../js/theme-toggle.js"></script>
+  <script src="../js/auth.js"></script>
 </head>
 <body>
 
   <!-- SITE-WIDE NAVIGATION HEADER -->
   <header class="site-header" id="site-header">
     <div class="container header-inner">
-      <a href="main-page/index.html" class="logo" aria-label="Home">
+      <a href="dashboard.html" class="logo" aria-label="Home">
         <div class="logo-icon" aria-hidden="true">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>
@@ -27,18 +29,18 @@
         <span class="logo-text">JU Student Management</span>
       </a>
       <nav class="nav-links" id="nav-links" role="navigation" aria-label="Main navigation">
-        <a href="main-page/index.html"       class="nav-link">🏠 Home</a>
-        <a href="dashboard.html"   class="nav-link nav-link--active">📊 Dashboard</a>
-        <a href="students.html"    class="nav-link">👨‍🎓 Students</a>
-        <a href="departments.html" class="nav-link">🏫 Departments</a>
-        <a href="courses.html"     class="nav-link">📚 Courses</a>
-        <a href="reports.html"     class="nav-link">📈 Reports</a>
+
+        <a href="dashboard.html"   class="nav-link nav-link--active"><i data-lucide="bar-chart-2"></i> Dashboard</a>
+        <a href="students.html"    class="nav-link"><i data-lucide="users"></i> Students</a>
+        <a href="departments.html" class="nav-link"><i data-lucide="building"></i> Departments</a>
+        <a href="courses.html"     class="nav-link"><i data-lucide="book"></i> Courses</a>
+        <a href="reports.html"     class="nav-link"><i data-lucide="trending-up"></i> Reports</a>
       </nav>
       <div class="header-actions" id="header-actions">
         <button id="theme-toggle" class="theme-toggle" title="Toggle theme" aria-label="Switch theme" type="button">
           <span class="theme-toggle-slider">
-            <span class="theme-toggle-icon theme-toggle-icon-sun">☀️</span>
-            <span class="theme-toggle-icon theme-toggle-icon-moon">🌙</span>
+            <span class="theme-toggle-icon theme-toggle-icon-sun"><i data-lucide="sun"></i></span>
+            <span class="theme-toggle-icon theme-toggle-icon-moon"><i data-lucide="moon"></i></span>
           </span>
         </button>
       </div>
@@ -51,33 +53,33 @@
 
     <div class="page-header">
       <div>
-        <h1 class="page-title">Dashboard</h1>
-        <p class="page-sub">Welcome back — here's what's happening today.</p>
+        <h1 class="page-title">Admin Dashboard</h1>
+        <p class="page-sub" id="admin-welcome">Welcome back — here's what's happening today.</p>
       </div>
-      <a href="students.html" class="btn-primary">+ Add Student</a>
+      <a href="students.html" class="btn btn-primary">+ Add Student</a>
     </div>
 
     <!-- STAT CARDS -->
     <div class="stats-grid">
       <div class="stat-card" style="--accent:#4f46e5;--accent-bg:#eef2ff">
         <div class="stat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
-        <div class="stat-body"><p class="stat-label">Total Active Students</p><p class="stat-value" data-count="2418">0</p></div>
-        <span class="stat-badge up">+12%</span>
+        <div class="stat-body"><p class="stat-label">Total Active Students</p><p class="stat-value" id="stat-students">—</p></div>
+        <span class="stat-badge up" id="stat-students-badge"></span>
       </div>
       <div class="stat-card" style="--accent:#7c3aed;--accent-bg:#f5f3ff">
         <div class="stat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
-        <div class="stat-body"><p class="stat-label">Departments</p><p class="stat-value" data-count="12">0</p></div>
-        <span class="stat-badge neutral">Stable</span>
+        <div class="stat-body"><p class="stat-label">Departments</p><p class="stat-value" id="stat-depts">—</p></div>
+        <span class="stat-badge neutral">Active</span>
       </div>
       <div class="stat-card" style="--accent:#0891b2;--accent-bg:#ecfeff">
         <div class="stat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
-        <div class="stat-body"><p class="stat-label">Available Courses</p><p class="stat-value" data-count="148">0</p></div>
-        <span class="stat-badge up">+5 new</span>
+        <div class="stat-body"><p class="stat-label">Available Courses</p><p class="stat-value" id="stat-courses">—</p></div>
+        <span class="stat-badge up" id="stat-courses-badge"></span>
       </div>
       <div class="stat-card" style="--accent:#059669;--accent-bg:#ecfdf5">
         <div class="stat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
-        <div class="stat-body"><p class="stat-label">Avg Courses / Student</p><p class="stat-value" data-count="4">0</p></div>
-        <span class="stat-badge up">+0.3</span>
+        <div class="stat-body"><p class="stat-label">System Status</p><p class="stat-value" style="font-size:1.1rem;">Online ✅</p></div>
+        <span class="stat-badge up">Healthy</span>
       </div>
     </div>
 
@@ -86,20 +88,24 @@
 
       <section class="card">
         <div class="card-header"><h2 class="card-title">Enrollment by Department</h2><a href="departments.html" class="card-link">View all</a></div>
-        <div class="dept-list" id="dept-bars"></div>
+        <div class="dept-list" id="dept-bars">
+          <div style="color:var(--text-muted);font-size:.875rem;padding:16px;">Loading…</div>
+        </div>
       </section>
 
       <section class="card">
         <div class="card-header"><h2 class="card-title">Top Enrolled Courses</h2><a href="courses.html" class="card-link">View all</a></div>
-        <div class="course-list" id="course-list"></div>
+        <div class="course-list" id="course-list">
+          <div style="color:var(--text-muted);font-size:.875rem;padding:16px;">Loading…</div>
+        </div>
       </section>
 
       <section class="card card--wide">
         <div class="card-header"><h2 class="card-title">Recently Added Students</h2><a href="students.html" class="card-link">View all</a></div>
         <div class="table-wrap">
           <table class="dash-table">
-            <thead><tr><th>Name</th><th>Department</th><th>Status</th><th>Enrolled</th></tr></thead>
-            <tbody id="recent-students"></tbody>
+            <thead><tr><th>Name</th><th>Email</th><th>Department</th><th>Enrolled</th></tr></thead>
+            <tbody id="recent-students"><tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:20px;">Loading…</td></tr></tbody>
           </table>
         </div>
       </section>
@@ -107,7 +113,13 @@
     </div>
   </main>
 
-  <script src="js/auth.js"></script>
-  <script src="js/dashboard.js"></script>
+  <script src="../js/dashboard.js"></script>
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+    });
+  </script>
 </body>
 </html>

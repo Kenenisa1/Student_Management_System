@@ -45,20 +45,20 @@
 
       <!-- Desktop nav links -->
       <nav class="nav-links" id="nav-links" role="navigation" aria-label="Main navigation">
-        <a href="index.html"       class="nav-link nav-link--active">🏠 Home</a>
-        <a href="../dashboard.html"   class="nav-link">📊 Dashboard</a>
-        <a href="../students.html"    class="nav-link">👨‍🎓 Students</a>
-        <a href="../departments.html" class="nav-link">🏫 Departments</a>
-        <a href="../courses.html"     class="nav-link">📚 Courses</a>
-        <a href="../reports.html"     class="nav-link">📈 Reports</a>
+        <a href="index.html"       class="nav-link nav-link--active"><i data-lucide="home"></i> Home</a>
+        <a href="../dashboard.html"   class="nav-link"><i data-lucide="bar-chart-2"></i> Dashboard</a>
+        <a href="../students.html"    class="nav-link"><i data-lucide="users"></i> Students</a>
+        <a href="../departments.html" class="nav-link"><i data-lucide="building"></i> Departments</a>
+        <a href="../courses.html"     class="nav-link"><i data-lucide="book"></i> Courses</a>
+        <a href="../reports.html"     class="nav-link"><i data-lucide="trending-up"></i> Reports</a>
       </nav>
 
       <!-- CTA buttons -->
       <div class="header-actions" id="header-actions">
         <button id="theme-toggle" class="theme-toggle" title="Toggle theme" aria-label="Switch theme" type="button">
           <span class="theme-toggle-slider">
-            <span class="theme-toggle-icon theme-toggle-icon-sun">☀️</span>
-            <span class="theme-toggle-icon theme-toggle-icon-moon">🌙</span>
+            <span class="theme-toggle-icon theme-toggle-icon-sun"><i data-lucide="sun"></i></span>
+            <span class="theme-toggle-icon theme-toggle-icon-moon"><i data-lucide="moon"></i></span>
           </span>
         </button>
       </div>
@@ -117,7 +117,7 @@
               <div class="avatar-bubble" style="background:#0891b2">RK</div>
               <div class="avatar-bubble" style="background:#059669">PL</div>
             </div>
-            <p class="hero-proof-text">Trusted by <strong>2,400+</strong> institutions worldwide</p>
+            <p class="hero-proof-text">Managing <strong id="hp-proof-students">0</strong> active students &amp; courses</p>
           </div>
         </div>
 
@@ -130,26 +130,24 @@
                 <span style="background:#fbbf24"></span>
                 <span style="background:#34d399"></span>
               </div>
-              <span class="hc-title">Live Dashboard</span>
+              <span class="hc-title">Live Database Status</span>
             </div>
             <div class="hc-stats-row">
-              <div class="hc-stat"><span class="hc-stat-val">2,418</span><span class="hc-stat-lbl">Students</span></div>
-              <div class="hc-stat"><span class="hc-stat-val">12</span><span class="hc-stat-lbl">Departments</span></div>
-              <div class="hc-stat"><span class="hc-stat-val">148</span><span class="hc-stat-lbl">Courses</span></div>
+              <div class="hc-stat"><span class="hc-stat-val" id="hp-hero-students">0</span><span class="hc-stat-lbl">Students</span></div>
+              <div class="hc-stat"><span class="hc-stat-val" id="hp-hero-depts">0</span><span class="hc-stat-lbl">Departments</span></div>
+              <div class="hc-stat"><span class="hc-stat-val" id="hp-hero-courses">0</span><span class="hc-stat-lbl">Courses</span></div>
             </div>
-            <div class="hc-bars">
-              <div class="hc-bar-row"><span>Computer Sci.</span><div class="hc-bar"><div style="width:82%;background:#4f46e5"></div></div><span>82%</span></div>
-              <div class="hc-bar-row"><span>Business</span><div class="hc-bar"><div style="width:67%;background:#7c3aed"></div></div><span>67%</span></div>
-              <div class="hc-bar-row"><span>Engineering</span><div class="hc-bar"><div style="width:74%;background:#0891b2"></div></div><span>74%</span></div>
+            <div class="hc-bars" id="hp-hero-bars">
+              <div class="hc-bar-row"><span>Loading DB...</span><div class="hc-bar"><div style="width:0%;background:#4f46e5"></div></div><span>0%</span></div>
             </div>
           </div>
           <div class="hero-card hero-card--float hero-card--float1">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <span>Student enrolled</span>
+            <span>Real-time DB Active</span>
           </div>
           <div class="hero-card hero-card--float hero-card--float2">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            <span>Report exported</span>
+            <span>Analytics Connected</span>
           </div>
         </div>
 
@@ -162,17 +160,17 @@
     <section class="stats-ticker" id="stats" aria-label="Platform statistics">
       <div class="container stats-ticker-inner">
         <div class="stat-item">
-          <span class="stat-num" data-target="2400">0</span>
+          <span class="stat-num" id="ticker-students" data-target="0">0</span>
           <span class="stat-label">Students managed</span>
         </div>
         <div class="stat-divider" aria-hidden="true"></div>
         <div class="stat-item">
-          <span class="stat-num" data-target="148">0</span>
+          <span class="stat-num" id="ticker-courses" data-target="0">0</span>
           <span class="stat-label">Active courses</span>
         </div>
         <div class="stat-divider" aria-hidden="true"></div>
         <div class="stat-item">
-          <span class="stat-num" data-target="12">0</span>
+          <span class="stat-num" id="ticker-depts" data-target="0">0</span>
           <span class="stat-label">Departments</span>
         </div>
         <div class="stat-divider" aria-hidden="true"></div>
@@ -292,11 +290,11 @@
         <div class="about-graphic" aria-hidden="true">
           <div class="ag-card ag-card--1">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4f46e5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-            <div><strong>2,418</strong><br><small>Active students</small></div>
+            <div><strong id="about-students">0</strong><br><small>Active students</small></div>
           </div>
           <div class="ag-card ag-card--2">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            <div><strong>148</strong><br><small>Courses running</small></div>
+            <div><strong id="about-courses">0</strong><br><small>Courses running</small></div>
           </div>
           <div class="ag-card ag-card--3">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
@@ -370,5 +368,12 @@
 
   <script src="../js/auth.js"></script>
   <script src="index.js"></script>
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+    });
+  </script>
 </body>
 </html>

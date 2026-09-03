@@ -30,11 +30,11 @@ export const getDepartmentById = async (req, res) => {
     try {
         const department = await departmentModel.getDepartmentById(req.params.id);
         if (!department) {
-            return res.status(404).json({ message: "Department not found" });
+            return res.status(404).json({ success: false, message: "Department not found" });
         }
-        res.json(department);
+        res.json({ success: true, data: department });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ success: false, message: error.message });
     }
 };
 
@@ -43,29 +43,26 @@ export const updateDepartment = async (req, res) => {
     try {
         const result = await departmentModel.updateDepartment(req.params.id, req.body);
         if (result.affectedRows === 0) {
-            return res.status(404).json({ message: "Department not found" });
+            return res.status(404).json({ success: false, message: "Department not found" });
         }
-        res.json({ message: "Department updated successfully" });
+        res.json({ success: true, message: "Department updated successfully" });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ success: false, message: error.message });
     }
 };
 
 // DELETE DEPARTMENT
 export const deleteDepartment = async (req, res) => {
     try {
-        // Since we have ON DELETE RESTRICT for students and courses, this will fail
-        // automatically at the DB level if there are linked records, which is correct behavior.
         const result = await departmentModel.deleteDepartment(req.params.id);
         if (result.affectedRows === 0) {
-            return res.status(404).json({ message: "Department not found" });
+            return res.status(404).json({ success: false, message: "Department not found" });
         }
-        res.json({ message: "Department deleted successfully" });
+        res.json({ success: true, message: "Department deleted successfully" });
     } catch (error) {
-        // Catch foreign key constraint errors
         if (error.code === 'ER_ROW_IS_REFERENCED_2') {
-            return res.status(400).json({ message: "Cannot delete department as it contains students or courses." });
+            return res.status(400).json({ success: false, message: "Cannot delete department as it contains students or courses." });
         }
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ success: false, message: error.message });
     }
 };

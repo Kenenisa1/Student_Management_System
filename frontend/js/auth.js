@@ -1,237 +1,339 @@
 /**
- * js/auth.js — EduCore Shared Authentication Utility
- * ─────────────────────────────────────────────────────────────
- * Load this script FIRST on every guarded page via:
- *   <script src="js/auth.js"></script>
+ * js/auth.js — JU Student Management — Shared Auth Utility v2.5 (Enterprise)
+ * ─────────────────────────────────────────────────────────────────────
+ * Load on every protected page BEFORE other scripts:
+ *   <script src="../js/auth.js"></script>   (from admin/ or any sub-dir)
+ *   <script src="js/auth.js"></script>      (from frontend root)
  *
- * Exports (as window globals, no module bundler required):
- *   EduAuth.guard()          — redirect to login if not authenticated
- *   EduAuth.logout()         — clear session and redirect to login
- *   EduAuth.initTopbar()     — populate topbar date, user chip, logout btn
- *   EduAuth.initSidebar()    — wire hamburger / overlay / close button
- *   EduAuth.getUser()        — returns the stored user object or null
+ * Public API (window.EduAuth):
+ *   EduAuth.API_BASE              — centralized API endpoint base
+ *   EduAuth.guard(allowedRoles?)  — redirect to login if not authenticated
+ *   EduAuth.logout()              — clear session and go to login
+ *   EduAuth.getUser()             — stored user object or null
+ *   EduAuth.getToken()            — stored JWT or null
+ *   EduAuth.getAuthHeaders()      — { Authorization: 'Bearer <token>' } object
+ *   EduAuth.initTopbar()          — populate user chip + wire logout
+ *   EduAuth.initSidebar()         — wire hamburger / overlay
+ *   EduAuth.apiFetch(url, opts)   — fetch with auth header, cookies, & auto-token-refresh
  */
 
 'use strict';
 
 (function () {
-  // ── Helpers ──────────────────────────────────────────────────
 
-  /** Retrieve the stored user from localStorage or sessionStorage. */
-  function getUser() {
-    try {
-      return (
-        JSON.parse(localStorage.getItem('educore_user')) ||
-        JSON.parse(sessionStorage.getItem('educore_user')) ||
-        null
-      );
-    } catch (_) {
-      return null;
-    }
-  }
+    // ── Centralized API Base ─────────────────────────────────────────
+    const isLocalCustomPort = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const isUnderProxy = window.location.port === '80' || window.location.port === '' || window.location.port === '443';
+    
+    // When served via Nginx (port 80), use relative '/api/v1'. Otherwise fallback to port 5000 backend.
+    const API_BASE = isUnderProxy && !isLocalCustomPort
+        ? '/api/v1'
+        : `${window.location.protocol}//${window.location.hostname}:5000/api/v1`;
 
-  /** Helper to get relative login page path based on current location */
-  function getLoginUrl() {
-    const isMainPage = window.location.pathname.includes('/main-page/') || window.location.href.includes('/main-page/');
-    return isMainPage ? '../login.html' : 'login.html';
-  }
+    // ── Helpers ──────────────────────────────────────────────────────
 
-  /** Clear all auth tokens and user data, then redirect to login. */
-  function logout() {
-    localStorage.removeItem('isAuthenticated');
-    localStorage.removeItem('educore_user');
-    sessionStorage.removeItem('educore_user');
-    window.location.href = getLoginUrl();
-  }
-
-  // ── Auth guard ───────────────────────────────────────────────
-  /**
-   * Call guard() at the top of every protected page script.
-   * If the session flag is absent the user is sent to login.html
-   * immediately — no further JS on the page runs.
-   *
-   * For index.html, also adds `auth-ready` to <html> so the
-   * flash-of-content prevention style is lifted.
-   */
-  function guard() {
-    if (localStorage.getItem('isAuthenticated') !== 'true') {
-      window.location.href = getLoginUrl();
-      return; // halt remaining script execution in the caller
-    }
-    // Lift the visibility:hidden gate used on index.html
-    document.documentElement.classList.add('auth-ready');
-  }
-
-  // ── Topbar initialisation ────────────────────────────────────
-  /**
-   * Populates:
-   *  - #topbar-date     — formatted date string
-   *  - #user-name       — name from stored user
-   *  - #user-avatar     — two-letter initials
-   *  - #user-role       — role label
-   *  - .logout-btn / .btn-topbar — wired to EduAuth.logout()
-   *
-   * All selectors are null-checked so this is safe to call on
-   * any page regardless of its exact DOM structure.
-   */
-  function initTopbar() {
-    // Date
-    const dateEl = document.getElementById('topbar-date');
-    if (dateEl) {
-      dateEl.textContent = new Date().toLocaleDateString(undefined, {
-        weekday: 'short', month: 'short', day: 'numeric', year: 'numeric',
-      });
+    /** Return the stored user object (checks localStorage then sessionStorage). */
+    function getUser() {
+        try {
+            return (
+                JSON.parse(localStorage.getItem('educore_user')) ||
+                JSON.parse(sessionStorage.getItem('educore_user')) ||
+                null
+            );
+        } catch (_) {
+            return null;
+        }
     }
 
-    // User info
-    const user = getUser();
-    if (user) {
-      const nameEl = document.getElementById('user-name');
-      const avEl   = document.getElementById('user-avatar');
-      const roleEl = document.getElementById('user-role');
-
-      if (nameEl) nameEl.textContent = user.name;
-      if (roleEl) roleEl.textContent = user.role || 'Administrator';
-      if (avEl) {
-        avEl.textContent = user.name
-          .split(' ')
-          .map(w => w[0])
-          .join('')
-          .slice(0, 2)
-          .toUpperCase();
-      }
+    /** Return the stored JWT token. */
+    function getToken() {
+        return (
+            localStorage.getItem('educore_token') ||
+            sessionStorage.getItem('educore_token') ||
+            null
+        );
     }
 
-    // Wire ALL logout triggers on the page
-    _wireLogoutTriggers();
-  }
+    /** Return headers object with Authorization header pre-filled. */
+    function getAuthHeaders() {
+        const token = getToken();
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        return headers;
+    }
 
-  /**
-   * Wire every element that should trigger logout.
-   * Covers: <a class="logout-btn">, .btn-topbar[href="login.html"],
-   * and any element with data-action="logout".
-   * Converts <a> logout links to buttons (prevents plain navigation
-   * that skips session cleanup).
-   */
-  function _wireLogoutTriggers() {
-    // Sidebar logout icon link
-    document.querySelectorAll('.logout-btn').forEach(el => {
-      el.addEventListener('click', function (e) {
-        e.preventDefault();
-        logout();
-      });
-    });
+    /** Normalize relative paths into absolute API URLs using API_BASE */
+    function resolveUrl(url) {
+        if (url.startsWith('http://') || url.startsWith('https://')) {
+            return url;
+        }
+        // Normalize /api/ or /api/v1/ prefixes
+        if (url.startsWith('/api/v1/')) {
+            return `${API_BASE}${url.replace('/api/v1', '')}`;
+        }
+        if (url.startsWith('/api/')) {
+            return `${API_BASE}${url.replace('/api', '')}`;
+        }
+        if (url.startsWith('/')) {
+            return `${API_BASE}${url}`;
+        }
+        return `${API_BASE}/${url}`;
+    }
 
-    // Topbar "Logout" button/link
-    document.querySelectorAll('.btn-topbar').forEach(el => {
-      // Only intercept if it points to login (i.e. it IS the logout button)
-      const href = el.getAttribute('href') || '';
-      if (href.includes('login')) {
-        el.addEventListener('click', function (e) {
-          e.preventDefault();
-          logout();
+    /** Attempt to refresh access token using the HttpOnly refresh token cookie */
+    let isRefreshing = false;
+    let refreshSubscribers = [];
+
+    function subscribeTokenRefresh(cb) {
+        refreshSubscribers.push(cb);
+    }
+
+    function onRefreshed(token) {
+        refreshSubscribers.forEach(cb => cb(token));
+        refreshSubscribers = [];
+    }
+
+    async function tryRefreshToken() {
+        try {
+            const res = await fetch(`${API_BASE}/auth/refresh`, {
+                method: 'POST',
+                credentials: 'include'
+            });
+            if (!res.ok) return null;
+            const data = await res.json();
+            if (data.token) {
+                const store = localStorage.getItem('educore_token') ? localStorage : sessionStorage;
+                store.setItem('educore_token', data.token);
+                return data.token;
+            }
+        } catch (e) {
+            console.error('[EduAuth] Refresh token failed:', e);
+        }
+        return null;
+    }
+
+    /**
+     * Wrapper around fetch() that automatically attaches auth headers, credentials,
+     * and performs automatic token rotation on 401 Unauthorized responses.
+     */
+    async function apiFetch(url, options = {}) {
+        const fullUrl = resolveUrl(url);
+        const headers = Object.assign(getAuthHeaders(), options.headers || {});
+        
+        let res = await fetch(fullUrl, { credentials: 'include', ...options, headers });
+
+        // Token expired or invalid — attempt refresh rotation
+        if (res.status === 401 && !fullUrl.includes('/auth/login') && !fullUrl.includes('/auth/refresh')) {
+            if (!isRefreshing) {
+                isRefreshing = true;
+                const newToken = await tryRefreshToken();
+                isRefreshing = false;
+                if (newToken) {
+                    onRefreshed(newToken);
+                    headers['Authorization'] = `Bearer ${newToken}`;
+                    return fetch(fullUrl, { credentials: 'include', ...options, headers });
+                } else {
+                    logout();
+                    throw new Error('Session expired. Redirecting to login.');
+                }
+            } else {
+                // Wait for ongoing refresh
+                return new Promise((resolve) => {
+                    subscribeTokenRefresh((token) => {
+                        headers['Authorization'] = `Bearer ${token}`;
+                        resolve(fetch(fullUrl, { credentials: 'include', ...options, headers }));
+                    });
+                });
+            }
+        }
+
+        return res;
+    }
+
+    // ── Path helpers ─────────────────────────────────────────────────
+
+    function getLoginUrl() {
+        const path = window.location.pathname;
+        if (path.includes('/admin/')) return '../login.html';
+        if (path.includes('/main-page/')) return '../login.html';
+        return 'login.html';
+    }
+
+    // ── Logout ───────────────────────────────────────────────────────
+
+    async function logout() {
+        try {
+            await fetch(`${API_BASE}/auth/logout`, { 
+                method: 'POST', 
+                credentials: 'include' 
+            });
+        } catch (e) {
+            console.error('Logout error:', e);
+        }
+
+        const authKeys = ['educore_user', 'educore_token', 'isAuthenticated'];
+        authKeys.forEach(k => {
+            localStorage.removeItem(k);
+            sessionStorage.removeItem(k);
         });
-      }
+        window.location.replace(getLoginUrl());
+    }
+
+    // ── Auth Guard ───────────────────────────────────────────────────
+
+    function guard(allowedRoles) {
+        const token  = getToken();
+        const flagOk = localStorage.getItem('isAuthenticated') === 'true';
+
+        if (!token || !flagOk) {
+            window.location.replace(getLoginUrl());
+            return;
+        }
+
+        const user = getUser();
+        if (!user || !user.role) {
+            window.location.replace(getLoginUrl());
+            return;
+        }
+
+        if (allowedRoles && !allowedRoles.includes(user.role)) {
+            _redirectToRoleHome(user.role);
+            return;
+        }
+
+        document.documentElement.classList.add('role-' + user.role);
+        document.documentElement.classList.add('auth-ready');
+    }
+
+    function _redirectToRoleHome(role) {
+        const path = window.location.pathname;
+        const isInAdmin   = path.includes('/admin/');
+        const isInSubdir  = isInAdmin || path.includes('/main-page/');
+        const prefix      = isInSubdir ? '../' : '';
+
+        if (role === 'student') {
+            window.location.replace(prefix + 'student-dashboard.html');
+        } else if (role === 'teacher') {
+            window.location.replace(prefix + 'teacher-home.html');
+        } else {
+            window.location.replace(isInAdmin ? 'dashboard.html' : 'admin/dashboard.html');
+        }
+    }
+
+    // ── Topbar ───────────────────────────────────────────────────────
+
+    function initTopbar() {
+        const dateEl = document.getElementById('topbar-date');
+        if (dateEl) {
+            dateEl.textContent = new Date().toLocaleDateString(undefined, {
+                weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'
+            });
+        }
+
+        const user = getUser();
+        if (user) {
+            const nameEl = document.getElementById('user-name');
+            const avEl   = document.getElementById('user-avatar');
+            const roleEl = document.getElementById('user-role');
+
+            const displayName = user.name || 'User';
+            const roleLabel   = { student: 'Student', teacher: 'Teacher', admin: 'Admin', superadmin: 'Super Admin' }[user.role] || user.role;
+
+            if (nameEl) nameEl.textContent = displayName;
+            if (roleEl) roleEl.textContent = roleLabel;
+            if (avEl) {
+                avEl.textContent = displayName
+                    .split(' ')
+                    .map(w => w[0] || '')
+                    .join('')
+                    .slice(0, 2)
+                    .toUpperCase();
+            }
+        }
+        _wireLogoutTriggers();
+    }
+
+    function _wireLogoutTriggers() {
+        document.querySelectorAll('.logout-btn, [data-action="logout"]').forEach(el => {
+            el.addEventListener('click', e => { e.preventDefault(); logout(); });
+        });
+        document.querySelectorAll('.btn-topbar').forEach(el => {
+            if ((el.getAttribute('href') || '').includes('login')) {
+                el.addEventListener('click', e => { e.preventDefault(); logout(); });
+            }
+        });
+    }
+
+    // ── Sidebar ──────────────────────────────────────────────────────
+
+    function initSidebar() {
+        const sidebar   = document.getElementById('sidebar');
+        const overlay   = document.getElementById('sidebar-overlay');
+        const hamburger = document.getElementById('hamburger');
+        const closeBtn  = document.getElementById('sidebar-close');
+
+        if (!sidebar) return;
+
+        const open  = () => { sidebar.classList.add('open');    if (overlay) overlay.classList.add('show'); };
+        const close = () => { sidebar.classList.remove('open'); if (overlay) overlay.classList.remove('show'); };
+
+        if (hamburger) hamburger.addEventListener('click', open);
+        if (closeBtn)  closeBtn.addEventListener('click', close);
+        if (overlay)   overlay.addEventListener('click', close);
+        document.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+    }
+
+    // ── Public API ───────────────────────────────────────────────────
+
+    window.EduAuth = {
+        API_BASE,
+        guard,
+        logout,
+        getUser,
+        getToken,
+        getAuthHeaders,
+        apiFetch,
+        initTopbar,
+        initSidebar
+    };
+
+    // ── Site-header auto-init ─────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', function () {
+        const hamburgerBtn = document.getElementById('landing-hamburger-btn');
+        const navLinks     = document.getElementById('nav-links');
+        if (hamburgerBtn && navLinks) {
+            const openMenu  = () => { navLinks.classList.add('active');    hamburgerBtn.setAttribute('aria-expanded', 'true');  hamburgerBtn.textContent = '✕'; };
+            const closeMenu = () => { navLinks.classList.remove('active'); hamburgerBtn.setAttribute('aria-expanded', 'false'); hamburgerBtn.textContent = '☰'; };
+
+            hamburgerBtn.addEventListener('click', e => { e.stopPropagation(); navLinks.classList.contains('active') ? closeMenu() : openMenu(); });
+            navLinks.querySelectorAll('.nav-link').forEach(l => l.addEventListener('click', closeMenu));
+            document.addEventListener('click', e => { const hdr = document.getElementById('site-header'); if (hdr && !hdr.contains(e.target)) closeMenu(); });
+            document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
+
+            if (getToken() && !navLinks.querySelector('.nav-link--mobile-logout')) {
+                const a = document.createElement('a');
+                a.href = '#'; a.className = 'nav-link nav-link--mobile-logout';
+                a.textContent = '🔐 Log Out';
+                a.addEventListener('click', e => { e.preventDefault(); logout(); });
+                navLinks.appendChild(a);
+            }
+        }
+
+        const headerActions = document.getElementById('header-actions');
+        if (headerActions && getToken() && !headerActions.querySelector('.btn-logout')) {
+            const btn = document.createElement('button');
+            btn.className   = 'btn btn-outline btn-logout';
+            btn.textContent = 'Log Out';
+            btn.onclick     = logout;
+            headerActions.appendChild(btn);
+        }
+
+        const siteHeader = document.getElementById('site-header');
+        if (siteHeader) {
+            window.addEventListener('scroll', () => {
+                siteHeader.classList.toggle('scrolled', window.scrollY > 10);
+            }, { passive: true });
+        }
     });
-
-    // Generic escape hatch: data-action="logout"
-    document.querySelectorAll('[data-action="logout"]').forEach(el => {
-      el.addEventListener('click', function (e) {
-        e.preventDefault();
-        logout();
-      });
-    });
-  }
-
-  // ── Sidebar initialisation ───────────────────────────────────
-  /**
-   * Wires the mobile sidebar hamburger, close button, and overlay.
-   * All selectors are null-checked — safe to call on every app page.
-   */
-  function initSidebar() {
-    const sidebar   = document.getElementById('sidebar');
-    const overlay   = document.getElementById('sidebar-overlay');
-    const hamburger = document.getElementById('hamburger');
-    const closeBtn  = document.getElementById('sidebar-close');
-
-    if (!sidebar) return;
-
-    function openSidebar()  {
-      sidebar.classList.add('open');
-      if (overlay) overlay.classList.add('show');
-    }
-    function closeSidebar() {
-      sidebar.classList.remove('open');
-      if (overlay) overlay.classList.remove('show');
-    }
-
-    if (hamburger) hamburger.addEventListener('click', openSidebar);
-    if (closeBtn)  closeBtn.addEventListener('click', closeSidebar);
-    if (overlay)   overlay.addEventListener('click', closeSidebar);
-
-    // Close on Escape
-    document.addEventListener('keydown', e => {
-      if (e.key === 'Escape') closeSidebar();
-    });
-  }
-
-  // ── Public API ───────────────────────────────────────────────
-  window.EduAuth = {
-    guard,
-    logout,
-    initTopbar,
-    initSidebar,
-    getUser,
-  };
-
-  // ── Site-header auto-init (runs on every page) ───────────────
-  // Wires the landing hamburger and populates #header-actions
-  // with a Log Out button whenever the site-header is present.
-  document.addEventListener('DOMContentLoaded', function initSiteHeader() {
-
-    // Hamburger ↔ nav-links toggle
-    const hamburgerBtn = document.getElementById('landing-hamburger-btn');
-    const navLinks     = document.getElementById('nav-links');
-
-    if (hamburgerBtn && navLinks) {
-      function openMenu()  { navLinks.classList.add('active'); hamburgerBtn.setAttribute('aria-expanded','true');  hamburgerBtn.textContent = '✕'; }
-      function closeMenu() { navLinks.classList.remove('active'); hamburgerBtn.setAttribute('aria-expanded','false'); hamburgerBtn.textContent = '☰'; }
-
-      hamburgerBtn.addEventListener('click', e => {
-        e.stopPropagation();
-        navLinks.classList.contains('active') ? closeMenu() : openMenu();
-      });
-      navLinks.querySelectorAll('.nav-link').forEach(l => l.addEventListener('click', closeMenu));
-      document.addEventListener('click', e => {
-        const hdr = document.getElementById('site-header');
-        if (hdr && !hdr.contains(e.target)) closeMenu();
-      });
-      document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
-
-      // Inject mobile Log Out link
-      if (!navLinks.querySelector('.nav-link--mobile-logout')) {
-        const a = document.createElement('a');
-        a.href      = '#';
-        a.className = 'nav-link nav-link--mobile-logout';
-        a.textContent = '🔐 Log Out';
-        a.addEventListener('click', e => { e.preventDefault(); logout(); });
-        navLinks.appendChild(a);
-      }
-    }
-
-    // Header-actions: inject Log Out buttons
-    const headerActions = document.getElementById('header-actions');
-    if (headerActions && !headerActions.querySelector('.btn-logout')) {
-     
-    }
-
-    // Scroll shadow on site-header
-    const siteHeader = document.getElementById('site-header');
-    if (siteHeader) {
-      window.addEventListener('scroll', () => {
-        siteHeader.classList.toggle('scrolled', window.scrollY > 10);
-      }, { passive: true });
-    }
-  });
 
 })();

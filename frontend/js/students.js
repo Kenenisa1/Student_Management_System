@@ -1,330 +1,873 @@
 /**
- * js/students.js — EduCore Students Directory
- * Depends on: js/auth.js (must be loaded first via <script> in HTML)
+ * js/students.js
+ * Students Directory
+ * Frontend ↔ Backend integration
  *
- * State controller: setUIState(state, errorMessage)
- * States: 'loading' | 'error' | 'empty' | 'success'
+ * API:
+ * GET    /api/students
+ * POST   /api/students
+ * PUT    /api/students/:id
+ * DELETE /api/students/:id
  */
 
 'use strict';
 
-// ── 1. Auth guard ─────────────────────────────────────────────
-EduAuth.guard();
+console.log("STUDENTS.JS LOADED");
 
-// ── 2. Topbar + sidebar init ──────────────────────────────────
+// ============================================================
+// API
+// ============================================================
+
+const API_URL = `${EduAuth.API_BASE}/students`;
+
+// ============================================================
+// AUTH
+// ============================================================
+
+EduAuth.guard();
 EduAuth.initTopbar();
 EduAuth.initSidebar();
 
-// ── State containers ──────────────────────────────────────────
+// ============================================================
+// UI STATE
+// ============================================================
+
 const STATE_IDS = ['loading', 'error', 'empty', 'success'];
 
-/**
- * setUIState — show exactly one state container, hide the rest.
- * @param {'loading'|'error'|'empty'|'success'} state
- * @param {string} [errorMessage]
- */
 function setUIState(state, errorMessage = '') {
-  STATE_IDS.forEach(s => {
-    const el = document.getElementById(`${s}-state`);
-    if (el) el.classList.toggle('hidden', s !== state);
-  });
-  if (state === 'error' && errorMessage) {
-    const errEl = document.getElementById('error-message');
-    if (errEl) errEl.textContent = errorMessage;
-  }
+    STATE_IDS.forEach((name) => {
+        const element = document.getElementById(`${name}-state`);
+
+        if (element) {
+            element.classList.toggle('hidden', name !== state);
+        }
+    });
+
+    if (state === 'error') {
+        const errorElement = document.getElementById('error-message');
+
+        if (errorElement) {
+            errorElement.textContent =
+                errorMessage || 'Something went wrong.';
+        }
+    }
 }
 
-// ── Seed data ─────────────────────────────────────────────────
+// ============================================================
+// AVATAR COLORS
+// ============================================================
+
 const AVATAR_COLORS = [
-  '#4f46e5','#7c3aed','#0891b2','#059669',
-  '#d97706','#dc2626','#0284c7','#7c3aed',
+    '#4f46e5',
+    '#7c3aed',
+    '#0891b2',
+    '#059669',
+    '#d97706',
+    '#dc2626',
+    '#0284c7',
+    '#7c3aed'
 ];
 
-const seedStudents = [
-  { id:'STU-001', first:'Emma',     last:'Johnson',  email:'emma.j@student.edu',    phone:'+1 555 101 2020', dept:'Computer Science',        courses:['CS101','CS201','MATH201'],    enrolled:'Aug 2024' },
-  { id:'STU-002', first:'Liam',     last:'Williams', email:'liam.w@student.edu',     phone:'+1 555 202 3030', dept:'Engineering',             courses:['ENG101','PHYS101','MATH101'], enrolled:'Aug 2024' },
-  { id:'STU-003', first:'Olivia',   last:'Brown',    email:'olivia.b@student.edu',   phone:'+1 555 303 4040', dept:'Business Administration', courses:['BUS101','ECON101'],           enrolled:'Jul 2024' },
-  { id:'STU-004', first:'Noah',     last:'Garcia',   email:'noah.g@student.edu',     phone:'+1 555 404 5050', dept:'Mathematics',             courses:['MATH301','MATH401','CS102'],  enrolled:'Jul 2024' },
-  { id:'STU-005', first:'Ava',      last:'Martinez', email:'ava.m@student.edu',      phone:'+1 555 505 6060', dept:'Natural Sciences',        courses:['BIO101','CHEM101'],           enrolled:'Jun 2024' },
-  { id:'STU-006', first:'William',  last:'Davis',    email:'will.d@student.edu',     phone:'+1 555 606 7070', dept:'Computer Science',        courses:['CS101','CS301','WEB101'],     enrolled:'Aug 2024' },
-  { id:'STU-007', first:'Sophia',   last:'Wilson',   email:'sophia.w@student.edu',   phone:'+1 555 707 8080', dept:'Arts & Humanities',       courses:['ART101','LIT201'],            enrolled:'Sep 2024' },
-  { id:'STU-008', first:'James',    last:'Anderson', email:'james.a@student.edu',    phone:'+1 555 808 9090', dept:'Engineering',             courses:['ENG201','ENG301','PHYS201'],  enrolled:'Aug 2024' },
-  { id:'STU-009', first:'Isabella', last:'Thomas',   email:'bella.t@student.edu',    phone:'+1 555 909 0101', dept:'Business Administration', courses:['BUS201','MKT101','BUS301'],   enrolled:'Jun 2024' },
-  { id:'STU-010', first:'Oliver',   last:'Jackson',  email:'oliver.j@student.edu',   phone:'+1 555 010 1212', dept:'Natural Sciences',        courses:['CHEM201','BIO201','CHEM301'], enrolled:'Sep 2024' },
-  { id:'STU-011', first:'Mia',      last:'White',    email:'mia.w@student.edu',      phone:'+1 555 111 2323', dept:'Mathematics',             courses:['MATH101','STAT101'],          enrolled:'Aug 2024' },
-  { id:'STU-012', first:'Ethan',    last:'Harris',   email:'ethan.h@student.edu',    phone:'+1 555 212 3434', dept:'Computer Science',        courses:['CS201','CS401','AI101'],      enrolled:'Jul 2024' },
-];
+// ============================================================
+// DATA
+// ============================================================
 
-function loadStudents() {
-  const raw = localStorage.getItem('educore_students');
-  return raw
-    ? JSON.parse(raw)
-    : seedStudents.map((s, i) => ({ ...s, deleted: false, colorIdx: i % AVATAR_COLORS.length }));
-}
-function saveStudents(data) {
-  localStorage.setItem('educore_students', JSON.stringify(data));
+let students = [];
+let loadedDepartments = [];
+
+async function loadDepartmentsOptions() {
+    try {
+        const res = await EduAuth.apiFetch('/departments');
+        if (!res.ok) return;
+        const result = await res.json();
+        if (result.success && Array.isArray(result.data)) {
+            loadedDepartments = result.data;
+            populateDeptDropdowns();
+        }
+    } catch (e) {
+        console.error('Failed to load departments options:', e);
+    }
 }
 
-let students = loadStudents();
-if (!localStorage.getItem('educore_students')) saveStudents(students);
+function populateDeptDropdowns() {
+    const sDept = document.getElementById('s-dept');
+    const dFilter = document.getElementById('dept-filter');
 
-// ── DOM refs (null-checked before use) ────────────────────────
-const tbody       = document.getElementById('studentRows');
+    if (sDept) {
+        const currentVal = sDept.value;
+        sDept.innerHTML = '<option value="">Select department…</option>' +
+            loadedDepartments.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+        if (currentVal) sDept.value = currentVal;
+    }
+
+    if (dFilter) {
+        const currentVal = dFilter.value;
+        dFilter.innerHTML = '<option value="">All Departments</option>' +
+            loadedDepartments.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+        if (currentVal) dFilter.value = currentVal;
+    }
+}
+
+// ============================================================
+// DOM
+// ============================================================
+
+const tbody = document.getElementById('studentRows');
 const resultCount = document.getElementById('result-count');
 const searchInput = document.getElementById('search-input');
-const deptFilter  = document.getElementById('dept-filter');
+const deptFilter = document.getElementById('dept-filter');
 
-// ── Render ────────────────────────────────────────────────────
+// ============================================================
+// CONVERT BACKEND DATA TO FRONTEND FORMAT
+// ============================================================
+
+function normalizeStudent(student, index) {
+    const fullName = student.name || '';
+
+    const parts = fullName.trim().split(/\s+/);
+
+    const first = parts.shift() || '';
+    const last = parts.join(' ') || '';
+
+    let deptName = student.department_name || student.dept;
+    if (!deptName && student.department_id && loadedDepartments.length > 0) {
+        const found = loadedDepartments.find(d => String(d.id) === String(student.department_id));
+        if (found) deptName = found.name;
+    }
+
+    return {
+        id: student.id,
+        first: first,
+        last: last,
+        email: student.email || '',
+        phone: student.phone || '',
+        department_id: student.department_id,
+        dept: deptName || String(student.department_id || '—'),
+        courses: Array.isArray(student.courses) ? student.courses : (student.courses ? String(student.courses).split(',') : []),
+        deleted: Boolean(student.is_deleted),
+        colorIdx: index % AVATAR_COLORS.length
+    };
+}
+
+// ============================================================
+// GET STUDENTS
+// ============================================================
+
+async function loadStudents() {
+    setUIState('loading');
+
+    try {
+        await loadDepartmentsOptions();
+        const response = await fetch(API_URL, { headers: EduAuth.getAuthHeaders() });
+
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        const result = await response.json();
+
+        console.log('GET /api/students:', result);
+
+        if (!result.success) {
+            throw new Error(
+                result.message || 'Failed to load students.'
+            );
+        }
+
+        students = (result.data || []).map(
+            normalizeStudent
+        );
+
+        refresh();
+
+    } catch (error) {
+        console.error('GET students error:', error);
+
+        setUIState(
+            'error',
+            `Could not load students: ${error.message}`
+        );
+    }
+}
+
+// ============================================================
+// RENDER
+// ============================================================
+
 function renderStudents(list) {
-  if (!tbody) return;
-  tbody.innerHTML = '';
+    if (!tbody) {
+        return;
+    }
 
-  const active = list.filter(s => !s.deleted);
+    tbody.innerHTML = '';
 
-  if (active.length === 0) {
-    setUIState('empty');
-    return;
-  }
+    const active = list.filter(
+        (student) => !student.deleted
+    );
 
-  setUIState('success');
-  if (resultCount) {
-    resultCount.textContent = `${active.length} student${active.length !== 1 ? 's' : ''}`;
-  }
+    if (active.length === 0) {
+        if (resultCount) {
+            resultCount.textContent = '0 students';
+        }
 
-  active.forEach((s, i) => {
-    const initials = `${s.first[0]}${s.last[0]}`.toUpperCase();
-    const color    = AVATAR_COLORS[s.colorIdx ?? i % AVATAR_COLORS.length];
-    const courseTags = (s.courses || [])
-      .map(c => `<span class="course-tag">${c}</span>`)
-      .join('');
+        setUIState('empty');
+        return;
+    }
 
-    const tr = document.createElement('tr');
-    tr.dataset.id = s.id;
-    tr.innerHTML = `
-      <td>
-        <span style="font-size:.8125rem;font-weight:700;color:var(--text-m)">${s.id}</span>
-      </td>
-      <td>
-        <div class="student-info">
-          <div class="student-avatar" style="background:${color}">${initials}</div>
-          <div>
-            <div class="student-fullname">${s.first} ${s.last}</div>
-            <div class="student-id-sub">${s.email}</div>
-          </div>
-        </div>
-      </td>
-      <td style="font-size:.8125rem;color:var(--text-m)">${s.phone || '—'}</td>
-      <td><span class="dept-badge">${s.dept}</span></td>
-      <td><div class="course-tags">${courseTags}</div></td>
-      <td>
-        <div class="action-cell">
-          <button class="btn-icon edit-btn" data-id="${s.id}"
-            title="Edit student" aria-label="Edit ${s.first} ${s.last}">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
-              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
-            </svg>
-          </button>
-          <button class="btn-icon btn-delete delete-btn" data-id="${s.id}"
-            title="Remove student" aria-label="Remove ${s.first} ${s.last}">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-              stroke="currentColor" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="3 6 5 6 21 6"/>
-              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
-              <path d="M10 11v6"/><path d="M14 11v6"/>
-              <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
-            </svg>
-          </button>
-        </div>
-      </td>`;
-    tbody.appendChild(tr);
-  });
+    setUIState('success');
 
-  // Bind row action buttons
-  tbody.querySelectorAll('.edit-btn').forEach(btn => {
-    btn.addEventListener('click', () => openModal(btn.dataset.id));
-  });
-  tbody.querySelectorAll('.delete-btn').forEach(btn => {
-    btn.addEventListener('click', () => softDelete(btn.dataset.id));
-  });
+    if (resultCount) {
+        resultCount.textContent =
+            `${active.length} student${active.length !== 1 ? 's' : ''}`;
+    }
+
+    active.forEach((student, index) => {
+
+        const firstInitial =
+            student.first.charAt(0).toUpperCase();
+
+        const lastInitial =
+            student.last.charAt(0).toUpperCase();
+
+        const initials =
+            `${firstInitial}${lastInitial}`;
+
+        const color =
+            AVATAR_COLORS[
+                student.colorIdx ??
+                index % AVATAR_COLORS.length
+            ];
+
+        const courseTags =
+            (student.courses || [])
+                .map(
+                    (course) =>
+                        `<span class="course-tag">${course}</span>`
+                )
+                .join('');
+
+        const row = document.createElement('tr');
+
+        row.dataset.id = student.id;
+
+        row.innerHTML = `
+            <td>
+                <span
+                    style="
+                        font-size:.8125rem;
+                        font-weight:700;
+                        color:var(--text-m)
+                    "
+                >
+                    ${student.id}
+                </span>
+            </td>
+
+            <td>
+                <div class="student-info">
+
+                    <div
+                        class="student-avatar"
+                        style="background:${color}"
+                    >
+                        ${initials}
+                    </div>
+
+                    <div>
+                        <div class="student-fullname">
+                            ${student.first} ${student.last}
+                        </div>
+
+                        <div class="student-id-sub">
+                            ${student.email}
+                        </div>
+                    </div>
+
+                </div>
+            </td>
+
+            <td
+                style="
+                    font-size:.8125rem;
+                    color:var(--text-m)
+                "
+            >
+                ${student.phone || '—'}
+            </td>
+
+            <td>
+                <span class="dept-badge">
+                    ${student.dept || '—'}
+                </span>
+            </td>
+
+            <td>
+                <div class="course-tags">
+                    ${courseTags || '—'}
+                </div>
+            </td>
+
+            <td>
+                <div class="action-cell">
+
+                    <button
+                        class="btn-icon edit-btn"
+                        data-id="${student.id}"
+                        title="Edit student"
+                        aria-label="Edit student"
+                    >
+                        ✏️
+                    </button>
+
+                    <button
+                        class="btn-icon btn-delete delete-btn"
+                        data-id="${student.id}"
+                        title="Remove student"
+                        aria-label="Remove student"
+                    >
+                        🗑️
+                    </button>
+
+                </div>
+            </td>
+        `;
+
+        tbody.appendChild(row);
+    });
+
+    // EDIT BUTTONS
+    tbody
+        .querySelectorAll('.edit-btn')
+        .forEach((button) => {
+            button.addEventListener('click', () => {
+                openModal(button.dataset.id);
+            });
+        });
+
+    // DELETE BUTTONS
+    tbody
+        .querySelectorAll('.delete-btn')
+        .forEach((button) => {
+            button.addEventListener('click', () => {
+                deleteStudent(button.dataset.id);
+            });
+        });
 }
 
-// ── Filter ────────────────────────────────────────────────────
-function getFiltered() {
-  const q    = searchInput ? searchInput.value.trim().toLowerCase() : '';
-  const dept = deptFilter  ? deptFilter.value : '';
-  return students.filter(s => {
-    if (s.deleted) return false;
-    const matchQ = !q ||
-      `${s.first} ${s.last}`.toLowerCase().includes(q) ||
-      s.id.toLowerCase().includes(q) ||
-      s.email.toLowerCase().includes(q);
-    const matchD = !dept || s.dept === dept;
-    return matchQ && matchD;
-  });
+// ============================================================
+// SEARCH / FILTER
+// ============================================================
+
+function getFilteredStudents() {
+
+    const query = searchInput
+        ? searchInput.value.trim().toLowerCase()
+        : '';
+
+    const department = deptFilter
+        ? deptFilter.value
+        : '';
+
+    return students.filter((student) => {
+
+        if (student.deleted) {
+            return false;
+        }
+
+        const fullName =
+            `${student.first} ${student.last}`
+                .toLowerCase();
+
+        const matchesSearch =
+            !query ||
+            fullName.includes(query) ||
+            String(student.id).includes(query) ||
+            student.email.toLowerCase().includes(query);
+
+        const matchesDepartment =
+            !department ||
+            String(student.department_id) ===
+                String(department);
+
+        return matchesSearch && matchesDepartment;
+    });
 }
 
-function refresh() { renderStudents(getFiltered()); }
-
-if (searchInput) searchInput.addEventListener('input', refresh);
-if (deptFilter)  deptFilter.addEventListener('change', refresh);
-
-// ── Soft delete ───────────────────────────────────────────────
-function softDelete(id) {
-  const idx = students.findIndex(s => s.id === id);
-  if (idx === -1) return;
-  if (!confirm(`Remove ${students[idx].first} ${students[idx].last} from the directory?`)) return;
-  students[idx].deleted = true;
-  saveStudents(students);
-  refresh();
+function refresh() {
+    renderStudents(getFilteredStudents());
 }
 
-// ── Modal ─────────────────────────────────────────────────────
-const modalBackdrop = document.getElementById('modal-backdrop');
-const modalTitle    = document.getElementById('modal-title');
-const modalClose    = document.getElementById('modal-close');
-const modalCancel   = document.getElementById('modal-cancel');
-const modalSubmit   = document.getElementById('modal-submit');
-const studentForm   = document.getElementById('student-form');
-const addStudentBtn = document.getElementById('add-student-btn');
+if (searchInput) {
+    searchInput.addEventListener(
+        'input',
+        refresh
+    );
+}
+
+if (deptFilter) {
+    deptFilter.addEventListener(
+        'change',
+        refresh
+    );
+}
+
+// ============================================================
+// MODAL
+// ============================================================
+
+const modalBackdrop =
+    document.getElementById('modal-backdrop');
+
+const modalTitle =
+    document.getElementById('modal-title');
+
+const modalClose =
+    document.getElementById('modal-close');
+
+const modalCancel =
+    document.getElementById('modal-cancel');
+
+const modalSubmit =
+    document.getElementById('modal-submit');
+
+const studentForm =
+    document.getElementById('student-form');
+
+const addStudentBtn =
+    document.getElementById('add-student-btn');
 
 const fields = {
-  id:      document.getElementById('student-id'),
-  first:   document.getElementById('s-first'),
-  last:    document.getElementById('s-last'),
-  email:   document.getElementById('s-email'),
-  dept:    document.getElementById('s-dept'),
-  phone:   document.getElementById('s-phone'),
-  courses: document.getElementById('s-courses'),
+    id: document.getElementById('student-id'),
+    first: document.getElementById('s-first'),
+    last: document.getElementById('s-last'),
+    email: document.getElementById('s-email'),
+    dept: document.getElementById('s-dept'),
+    phone: document.getElementById('s-phone'),
+    courses: document.getElementById('s-courses')
 };
 
+// ============================================================
+// OPEN MODAL
+// ============================================================
+
 function openModal(editId = null) {
-  if (!studentForm || !modalBackdrop) return;
-  studentForm.reset();
-  clearFormErrors();
 
-  if (editId) {
-    const s = students.find(x => x.id === editId);
-    if (!s) return;
-    if (modalTitle)  modalTitle.textContent  = 'Edit Student';
-    if (modalSubmit) modalSubmit.textContent = 'Save Changes';
-    if (fields.id)      fields.id.value      = s.id;
-    if (fields.first)   fields.first.value   = s.first;
-    if (fields.last)    fields.last.value    = s.last;
-    if (fields.email)   fields.email.value   = s.email;
-    if (fields.dept)    fields.dept.value    = s.dept;
-    if (fields.phone)   fields.phone.value   = s.phone || '';
-    if (fields.courses) fields.courses.value = (s.courses || []).join(', ');
-  } else {
-    if (modalTitle)  modalTitle.textContent  = 'Add New Student';
-    if (modalSubmit) modalSubmit.textContent = 'Save Student';
-    if (fields.id)   fields.id.value = '';
-  }
+    if (!studentForm || !modalBackdrop) {
+        return;
+    }
 
-  modalBackdrop.hidden = false;
-  if (fields.first) fields.first.focus();
+    studentForm.reset();
+    clearFormErrors();
+
+    if (editId !== null) {
+
+        const student = students.find(
+            (item) =>
+                String(item.id) === String(editId)
+        );
+
+        if (!student) {
+            return;
+        }
+
+        modalTitle.textContent = 'Edit Student';
+        modalSubmit.textContent = 'Save Changes';
+
+        fields.id.value = student.id;
+        fields.first.value = student.first;
+        fields.last.value = student.last;
+        fields.email.value = student.email;
+        fields.phone.value = student.phone || '';
+
+        fields.dept.value =
+            student.department_id || '';
+
+        fields.courses.value =
+            (student.courses || []).join(', ');
+
+    } else {
+
+        modalTitle.textContent = 'Add New Student';
+        modalSubmit.textContent = 'Save Student';
+
+        fields.id.value = '';
+    }
+
+    modalBackdrop.hidden = false;
+
+    if (fields.first) {
+        fields.first.focus();
+    }
 }
+
+// ============================================================
+// CLOSE MODAL
+// ============================================================
 
 function closeModal() {
-  if (modalBackdrop) modalBackdrop.hidden = true;
+
+    if (modalBackdrop) {
+        modalBackdrop.hidden = true;
+    }
 }
 
-if (addStudentBtn) addStudentBtn.addEventListener('click', () => openModal());
-if (modalClose)    modalClose.addEventListener('click', closeModal);
-if (modalCancel)   modalCancel.addEventListener('click', closeModal);
+if (addStudentBtn) {
+    addStudentBtn.addEventListener(
+        'click',
+        () => openModal()
+    );
+}
+
+if (modalClose) {
+    modalClose.addEventListener(
+        'click',
+        closeModal
+    );
+}
+
+if (modalCancel) {
+    modalCancel.addEventListener(
+        'click',
+        closeModal
+    );
+}
+
 if (modalBackdrop) {
-  modalBackdrop.addEventListener('click', e => {
-    if (e.target === modalBackdrop) closeModal();
-  });
-}
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') closeModal();
-});
 
-// ── Form validation ───────────────────────────────────────────
-function setFieldError(inputId, errorId, msg) {
-  const input = document.getElementById(inputId);
-  const span  = document.getElementById(errorId);
-  if (input) input.classList.toggle('is-error', !!msg);
-  if (span)  span.textContent = msg;
+    modalBackdrop.addEventListener(
+        'click',
+        (event) => {
+
+            if (event.target === modalBackdrop) {
+                closeModal();
+            }
+
+        }
+    );
 }
+
+document.addEventListener(
+    'keydown',
+    (event) => {
+
+        if (event.key === 'Escape') {
+            closeModal();
+        }
+
+    }
+);
+
+// ============================================================
+// VALIDATION
+// ============================================================
+
+function setFieldError(
+    inputId,
+    errorId,
+    message
+) {
+
+    const input =
+        document.getElementById(inputId);
+
+    const error =
+        document.getElementById(errorId);
+
+    if (input) {
+        input.classList.toggle(
+            'is-error',
+            Boolean(message)
+        );
+    }
+
+    if (error) {
+        error.textContent = message;
+    }
+}
+
 function clearFormErrors() {
-  [
-    ['s-first', 'err-first'],
-    ['s-last',  'err-last'],
-    ['s-email', 'err-email'],
-    ['s-dept',  'err-dept'],
-  ].forEach(([i, e]) => setFieldError(i, e, ''));
+
+    const errors = [
+        ['s-first', 'err-first'],
+        ['s-last', 'err-last'],
+        ['s-email', 'err-email'],
+        ['s-dept', 'err-dept']
+    ];
+
+    errors.forEach(
+        ([inputId, errorId]) => {
+
+            setFieldError(
+                inputId,
+                errorId,
+                ''
+            );
+
+        }
+    );
 }
+
+// ============================================================
+// CREATE / UPDATE
+// ============================================================
 
 if (studentForm) {
-  studentForm.addEventListener('submit', e => {
-    e.preventDefault();
-    clearFormErrors();
-    let valid = true;
 
-    if (!fields.first?.value.trim()) {
-      setFieldError('s-first', 'err-first', 'First name is required.'); valid = false;
-    }
-    if (!fields.last?.value.trim()) {
-      setFieldError('s-last', 'err-last', 'Last name is required.'); valid = false;
-    }
-    if (!fields.email?.value.trim() ||
-        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(fields.email.value)) {
-      setFieldError('s-email', 'err-email', 'Valid email is required.'); valid = false;
-    }
-    if (!fields.dept?.value) {
-      setFieldError('s-dept', 'err-dept', 'Please select a department.'); valid = false;
-    }
-    if (!valid) return;
+    studentForm.addEventListener(
+        'submit',
+        async (event) => {
 
-    const coursesRaw = fields.courses?.value.trim() || '';
-    const coursesArr = coursesRaw
-      ? coursesRaw.split(',').map(c => c.trim()).filter(Boolean)
-      : [];
-    const editId = fields.id?.value;
+            event.preventDefault();
 
-    if (editId) {
-      const idx = students.findIndex(s => s.id === editId);
-      if (idx !== -1) {
-        students[idx] = {
-          ...students[idx],
-          first:   fields.first.value.trim(),
-          last:    fields.last.value.trim(),
-          email:   fields.email.value.trim(),
-          phone:   fields.phone?.value.trim() || '',
-          dept:    fields.dept.value,
-          courses: coursesArr,
-        };
-      }
-    } else {
-      const newId = `STU-${String(students.length + 1).padStart(3, '0')}`;
-      students.push({
-        id:       newId,
-        first:    fields.first.value.trim(),
-        last:     fields.last.value.trim(),
-        email:    fields.email.value.trim(),
-        phone:    fields.phone?.value.trim() || '',
-        dept:     fields.dept.value,
-        courses:  coursesArr,
-        enrolled: new Date().toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
-        deleted:  false,
-        colorIdx: students.length % AVATAR_COLORS.length,
-      });
-    }
+            clearFormErrors();
 
-    saveStudents(students);
-    closeModal();
-    refresh();
-  });
+            let valid = true;
+
+            // FIRST NAME
+            if (!fields.first.value.trim()) {
+
+                setFieldError(
+                    's-first',
+                    'err-first',
+                    'First name is required.'
+                );
+
+                valid = false;
+            }
+
+            // LAST NAME
+            if (!fields.last.value.trim()) {
+
+                setFieldError(
+                    's-last',
+                    'err-last',
+                    'Last name is required.'
+                );
+
+                valid = false;
+            }
+
+            // EMAIL
+            if (
+                !fields.email.value.trim() ||
+                !/^[^\s@]+@[^\s@]+\.[^\s@]+$/
+                    .test(fields.email.value)
+            ) {
+
+                setFieldError(
+                    's-email',
+                    'err-email',
+                    'Valid email is required.'
+                );
+
+                valid = false;
+            }
+
+            // DEPARTMENT
+            if (!fields.dept.value) {
+
+                setFieldError(
+                    's-dept',
+                    'err-dept',
+                    'Please select a department.'
+                );
+
+                valid = false;
+            }
+
+            if (!valid) {
+                return;
+            }
+
+            // =================================================
+            // IMPORTANT:
+            // Backend expects:
+            //
+            // {
+            //   name,
+            //   email,
+            //   phone,
+            //   department_id
+            // }
+            // =================================================
+
+            const name =
+                `${fields.first.value.trim()} ${fields.last.value.trim()}`;
+
+            const departmentId =
+                Number(fields.dept.value);
+
+            const studentData = {
+                name: name,
+                email: fields.email.value.trim(),
+                phone: fields.phone.value.trim(),
+                department_id: departmentId
+            };
+
+            console.log(
+                'SENDING STUDENT DATA:',
+                studentData
+            );
+
+            const editId =
+                fields.id.value;
+
+            try {
+
+                let response;
+
+                // UPDATE
+                if (editId) {
+
+                    response = await fetch(
+                        `${API_URL}/${editId}`,
+                        {
+                            method: 'PUT',
+
+                            headers: EduAuth.getAuthHeaders(),
+
+                            body:
+                                JSON.stringify(
+                                    studentData
+                                )
+                        }
+                    );
+
+                }
+
+                // CREATE
+                else {
+
+                    response = await fetch(
+                        API_URL,
+                        {
+                            method: 'POST',
+
+                            headers: EduAuth.getAuthHeaders(),
+
+                            body:
+                                JSON.stringify(
+                                    studentData
+                                )
+                        }
+                    );
+
+                }
+
+                const result =
+                    await response.json();
+
+                console.log(
+                    'BACKEND SAVE RESPONSE:',
+                    result
+                );
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        result.message ||
+                        `HTTP ${response.status}`
+                    );
+
+                }
+
+                alert(
+                    result.message ||
+                    'Student saved successfully.'
+                );
+
+                closeModal();
+
+                // Reload students directly from MySQL
+                await loadStudents();
+
+            } catch (error) {
+
+                console.error(
+                    'Save student error:',
+                    error
+                );
+
+                alert(
+                    `Could not save student: ${error.message}`
+                );
+            }
+        }
+    );
 }
 
-// ── Initial render (with brief loading state) ─────────────────
-setUIState('loading');
-setTimeout(() => {
-  students = loadStudents();
-  refresh();
-}, 600);
+// ============================================================
+// DELETE
+// ============================================================
+
+async function deleteStudent(id) {
+
+    const student = students.find(
+        (item) =>
+            String(item.id) === String(id)
+    );
+
+    if (!student) {
+        return;
+    }
+
+    const confirmed = confirm(
+        `Remove ${student.first} ${student.last} from the directory?`
+    );
+
+    if (!confirmed) {
+        return;
+    }
+
+    try {
+
+        const response = await fetch(
+            `${API_URL}/${id}`,
+            {
+                method: 'DELETE',
+                                headers: EduAuth.getAuthHeaders()
+            }
+        );
+
+        const result =
+            await response.json();
+
+        console.log(
+            'BACKEND DELETE RESPONSE:',
+            result
+        );
+
+        if (!response.ok) {
+
+            throw new Error(
+                result.message ||
+                `HTTP ${response.status}`
+            );
+        }
+
+        alert(
+            result.message ||
+            'Student deleted successfully.'
+        );
+
+        // Reload from backend
+        await loadStudents();
+
+    } catch (error) {
+
+        console.error(
+            'Delete student error:',
+            error
+        );
+
+        alert(
+            `Could not delete student: ${error.message}`
+        );
+    }
+}
+
+// ============================================================
+// INITIAL LOAD
+// ============================================================
+
+loadStudents();

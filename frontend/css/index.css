@@ -850,3 +850,12 @@ ul { list-style: none; }
     color: #666;
   }
 }
+
+/* ══════════════════════════════════════════
+   ROLE-BASED ACCESS CONTROL (RBAC)
+   ══════════════════════════════════════════ */
+html.role-student .admin-only {
+  display: none !important;
+}
+
+.lucide { width: 1.2em; height: 1.2em; vertical-align: middle; }

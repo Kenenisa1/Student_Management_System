@@ -1,155 +1,98 @@
-import * as courseModel from "../models/courseModel.js";
+/**
+ * =====================================================
+ * courseController.js
+ * =====================================================
+ * Clean Code refactor:
+ *  - All handlers use async/await + next(err) pattern
+ *  - Errors thrown via custom error classes
+ *  - DRY: ABAC access checks extracted into helpers
+ * =====================================================
+ */
 
-// ============================================================
-// CREATE COURSE
-// POST /api/courses
-// ============================================================
+import * as courseModel from '../models/courseModel.js';
+import { NotFoundError, ForbiddenError } from '../utils/errors.js';
 
-export const createCourse = async (req, res) => {
-    try {
-        const course = req.body;
+// ─────────────────────────────────────────────────────────────────────────────
+// PRIVATE ABAC HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
 
-        const result = await courseModel.createCourse(course);
-
-        res.status(201).json({
-            success: true,
-            message: "Course created successfully",
-            id: result.insertId
-        });
-
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: error.message
-        });
+/** Throw 403 if teacher doesn't own the course */
+const assertTeacherCourseAccess = (user, course) => {
+    if (user.role === 'teacher' && course.instructor_id !== user.id) {
+        throw new ForbiddenError('You do not have access to this course.');
     }
 };
 
-
-// ============================================================
-// GET ALL COURSES
-// GET /api/courses
-// ============================================================
-
-export const getAllCourses = async (req, res) => {
-    try {
-        const courses = await courseModel.getAllCourses();
-
-        res.json({
-            success: true,
-            data: courses
-        });
-
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: error.message
-        });
-    }
+/** Throw 403 if student is not enrolled in the course */
+const assertStudentEnrollment = async (userId, course) => {
+    const { findStudentCoursesWithGrades } = await import('../models/userModel.js');
+    const enrolled = await findStudentCoursesWithGrades(userId);
+    const isEnrolled = enrolled.some(c => c.id === course.id);
+    if (!isEnrolled) throw new ForbiddenError('You are not enrolled in this course.');
 };
 
-
-// ============================================================
-// GET COURSE BY ID
-// GET /api/courses/:id
-// ============================================================
-
-export const getCourseById = async (req, res) => {
-    try {
-        const course = await courseModel.getCourseById(
-            req.params.id
-        );
-
-        if (!course) {
-            return res.status(404).json({
-                success: false,
-                message: "Course not found"
-            });
-        }
-
-        res.json({
-            success: true,
-            data: course
-        });
-
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: error.message
-        });
+/** Apply ABAC filtering for course list by role */
+const filterCoursesByRole = async (courses, user) => {
+    if (user.role === 'teacher') {
+        return courses.filter(c => c.instructor_id === user.id);
     }
+    if (user.role === 'student') {
+        const { findStudentCoursesWithGrades } = await import('../models/userModel.js');
+        const myCourses = await findStudentCoursesWithGrades(user.id);
+        const myIds = new Set(myCourses.map(c => c.id));
+        return courses.filter(c => myIds.has(c.id));
+    }
+    return courses; // admin / superadmin see all
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// CONTROLLERS
+// ─────────────────────────────────────────────────────────────────────────────
 
-// ============================================================
-// UPDATE COURSE
-// PUT /api/courses/:id
-// ============================================================
-
-export const updateCourse = async (req, res) => {
+/** POST /api/courses */
+export const createCourse = async (req, res, next) => {
     try {
-        const result = await courseModel.updateCourse(
-            req.params.id,
-            req.body
-        );
-
-        if (result.affectedRows === 0) {
-            return res.status(404).json({
-                success: false,
-                message: "Course not found"
-            });
-        }
-
-        res.json({
-            success: true,
-            message: "Course updated successfully"
-        });
-
-    } catch (error) {
-        res.status(500).json({
-            success: false,
-            message: error.message
-        });
-    }
+        const result = await courseModel.createCourse(req.body);
+        return res.status(201).json({ success: true, message: 'Course created successfully.', id: result.insertId });
+    } catch (err) { next(err); }
 };
 
-
-// ============================================================
-// DELETE COURSE
-// DELETE /api/courses/:id
-// ============================================================
-
-export const deleteCourse = async (req, res) => {
+/** GET /api/courses */
+export const getAllCourses = async (req, res, next) => {
     try {
-        const result = await courseModel.deleteCourse(
-            req.params.id
-        );
+        const allCourses = await courseModel.getAllCourses();
+        const courses    = await filterCoursesByRole(allCourses, req.user);
+        return res.json({ success: true, data: courses });
+    } catch (err) { next(err); }
+};
 
-        if (result.affectedRows === 0) {
-            return res.status(404).json({
-                success: false,
-                message: "Course not found"
-            });
-        }
+/** GET /api/courses/:id */
+export const getCourseById = async (req, res, next) => {
+    try {
+        const course = await courseModel.getCourseById(req.params.id);
+        if (!course) throw new NotFoundError('Course');
 
-        res.json({
-            success: true,
-            message: "Course deleted successfully"
-        });
+        assertTeacherCourseAccess(req.user, course);
+        if (req.user.role === 'student') await assertStudentEnrollment(req.user.id, course);
 
-    } catch (error) {
+        return res.json({ success: true, data: course });
+    } catch (err) { next(err); }
+};
 
-        if (error.code === "ER_ROW_IS_REFERENCED_2") {
-            return res.status(400).json({
-                success: false,
-                message:
-                    "Cannot delete course as it is assigned to students."
-            });
-        }
+/** PUT /api/courses/:id */
+export const updateCourse = async (req, res, next) => {
+    try {
+        const result = await courseModel.updateCourse(req.params.id, req.body);
+        if (result.affectedRows === 0) throw new NotFoundError('Course');
+        return res.json({ success: true, message: 'Course updated successfully.' });
+    } catch (err) { next(err); }
+};
 
-        res.status(500).json({
-            success: false,
-            message: error.message
-        });
-    }
+/** DELETE /api/courses/:id */
+export const deleteCourse = async (req, res, next) => {
+    try {
+        const result = await courseModel.deleteCourse(req.params.id);
+        if (result.affectedRows === 0) throw new NotFoundError('Course');
+        return res.json({ success: true, message: 'Course deleted successfully.' });
+    } catch (err) { next(err); }
 };
