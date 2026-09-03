@@ -38,8 +38,8 @@ connectDB();
  */
 const server = app.listen(PORT, () => {
     console.log("=================================");
-    console.log("🚀 Server Started Successfully");
-    console.log(`🌐 http://localhost:${PORT}`);
+    console.log(" Server Started Successfully");
+    console.log(` http://localhost:${PORT}`);
     console.log("=================================");
 });
 
